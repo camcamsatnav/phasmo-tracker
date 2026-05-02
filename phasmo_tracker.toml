@@ -1,0 +1,208 @@
+[tracker]
+window_title_contains = "Phasmophobia"
+app_name_contains = "Phasmophobia"
+poll_ms = 350
+stable_frames = 2
+
+[[evidence]]
+name = "EMF Level 5"
+
+[evidence.selected]
+x_pct = 0.231
+y_pct = 0.235
+w_pct = 0.008
+h_pct = 0.017
+
+[evidence.selected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.08
+
+[evidence.rejected]
+x_pct = 0.244
+y_pct = 0.24
+w_pct = 0.006
+h_pct = 0.008
+
+[evidence.rejected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.1
+
+[[evidence]]
+name = "D.O.T.S Projector"
+
+[evidence.selected]
+x_pct = 0.231
+y_pct = 0.33299999999999996
+w_pct = 0.008
+h_pct = 0.017
+
+[evidence.selected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.08
+
+[evidence.rejected]
+x_pct = 0.244
+y_pct = 0.33799999999999997
+w_pct = 0.006
+h_pct = 0.008
+
+[evidence.rejected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.1
+
+[[evidence]]
+name = "Ultraviolet"
+
+[evidence.selected]
+x_pct = 0.231
+y_pct = 0.431
+w_pct = 0.008
+h_pct = 0.017
+
+[evidence.selected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.08
+
+[evidence.rejected]
+x_pct = 0.244
+y_pct = 0.436
+w_pct = 0.006
+h_pct = 0.008
+
+[evidence.rejected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.1
+
+[[evidence]]
+name = "Freezing Temperatures"
+
+[evidence.selected]
+x_pct = 0.231
+y_pct = 0.529
+w_pct = 0.008
+h_pct = 0.017
+
+[evidence.selected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.08
+
+[evidence.rejected]
+x_pct = 0.244
+y_pct = 0.534
+w_pct = 0.006
+h_pct = 0.008
+
+[evidence.rejected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.1
+
+[[evidence]]
+name = "Ghost Orb"
+
+[evidence.selected]
+x_pct = 0.231
+y_pct = 0.627
+w_pct = 0.008
+h_pct = 0.017
+
+[evidence.selected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.08
+
+[evidence.rejected]
+x_pct = 0.244
+y_pct = 0.632
+w_pct = 0.006
+h_pct = 0.008
+
+[evidence.rejected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.1
+
+[[evidence]]
+name = "Ghost Writing"
+
+[evidence.selected]
+x_pct = 0.231
+y_pct = 0.725
+w_pct = 0.008
+h_pct = 0.017
+
+[evidence.selected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.08
+
+[evidence.rejected]
+x_pct = 0.244
+y_pct = 0.73
+w_pct = 0.006
+h_pct = 0.008
+
+[evidence.rejected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.1
+
+[[evidence]]
+name = "Spirit Box"
+
+[evidence.selected]
+x_pct = 0.231
+y_pct = 0.8230000000000001
+w_pct = 0.008
+h_pct = 0.017
+
+[evidence.selected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.08
+
+[evidence.rejected]
+x_pct = 0.244
+y_pct = 0.8280000000000001
+w_pct = 0.006
+h_pct = 0.008
+
+[evidence.rejected.color]
+r = 10
+g = 10
+b = 10
+tolerance = 55
+min_ratio = 0.1
