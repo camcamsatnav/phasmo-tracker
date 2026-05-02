@@ -12,6 +12,7 @@ struct Region {
 
 pub fn evidence_page_visible(image: &RgbaImage, evidence: &[EvidenceConfig]) -> bool {
     paper_visible(image)
+        && evidence_page_markers_visible(image)
         && checkbox_count(image, evidence) >= required_checkbox_count(evidence)
         && ghost_grid_visible(image)
 }
@@ -86,6 +87,53 @@ fn ghost_grid_visible(image: &RgbaImage) -> bool {
     visible_cells >= 10
 }
 
+fn evidence_page_markers_visible(image: &RgbaImage) -> bool {
+    evidence_titles_visible(image) && right_page_prompt_visible(image)
+}
+
+fn evidence_titles_visible(image: &RgbaImage) -> bool {
+    let left_title = Region {
+        x_pct: 0.220,
+        y_pct: 0.145,
+        w_pct: 0.110,
+        h_pct: 0.055,
+    };
+    let right_title = Region {
+        x_pct: 0.530,
+        y_pct: 0.150,
+        w_pct: 0.110,
+        h_pct: 0.055,
+    };
+    let left_rule = Region {
+        x_pct: 0.225,
+        y_pct: 0.197,
+        w_pct: 0.260,
+        h_pct: 0.008,
+    };
+    let right_rule = Region {
+        x_pct: 0.533,
+        y_pct: 0.197,
+        w_pct: 0.260,
+        h_pct: 0.008,
+    };
+
+    title_ink_ratio(image, &left_title) >= 0.035
+        && title_ink_ratio(image, &right_title) >= 0.030
+        && dark_ratio(image, &left_rule) >= 0.30
+        && dark_ratio(image, &right_rule) >= 0.30
+}
+
+fn right_page_prompt_visible(image: &RgbaImage) -> bool {
+    let prompt = Region {
+        x_pct: 0.540,
+        y_pct: 0.220,
+        w_pct: 0.260,
+        h_pct: 0.075,
+    };
+
+    title_ink_ratio(image, &prompt) >= 0.015
+}
+
 fn left_checkbox_border(item: &EvidenceConfig) -> Region {
     Region {
         x_pct: (item.selected.x_pct - item.selected.w_pct * 0.42).max(0.0),
@@ -119,6 +167,12 @@ fn dark_ratio(image: &RgbaImage, region: &Region) -> f64 {
 fn ghost_name_ink_ratio(image: &RgbaImage, region: &Region) -> f64 {
     ratio(image, region, |pixel| {
         pixel[0] <= 175 && pixel[1] <= 170 && pixel[2] <= 145
+    })
+}
+
+fn title_ink_ratio(image: &RgbaImage, region: &Region) -> f64 {
+    ratio(image, region, |pixel| {
+        pixel[0] <= 95 && pixel[1] <= 90 && pixel[2] <= 75
     })
 }
 
@@ -187,7 +241,18 @@ mod tests {
     }
 
     #[test]
-    fn rejects_journal_page_with_checkboxes_but_without_ghost_grid() {
+    fn rejects_journal_page_with_checkboxes_but_without_evidence_markers() {
+        let mut image = RgbaImage::from_pixel(1000, 1000, Rgba([190, 180, 130, 255]));
+        let evidence = evidence_items();
+
+        draw_evidence_checkboxes(&mut image, &evidence);
+        draw_ghost_grid(&mut image);
+
+        assert!(!evidence_page_visible(&image, &evidence));
+    }
+
+    #[test]
+    fn rejects_journal_page_with_evidence_markers_but_without_ghost_grid() {
         let mut image = RgbaImage::from_pixel(1000, 1000, Rgba([190, 180, 130, 255]));
         let evidence = evidence_items();
 
@@ -199,6 +264,7 @@ mod tests {
             );
             draw_region(&mut image, &top_checkbox_border(item), Rgba([5, 5, 5, 255]));
         }
+        draw_evidence_page_markers(&mut image);
 
         assert!(!evidence_page_visible(&image, &evidence));
     }
@@ -209,6 +275,7 @@ mod tests {
         let evidence = evidence_items();
 
         draw_evidence_checkboxes(&mut image, &evidence);
+        draw_evidence_page_markers(&mut image);
         draw_ghost_grid(&mut image);
 
         assert!(evidence_page_visible(&image, &evidence));
@@ -218,6 +285,45 @@ mod tests {
         for item in evidence {
             draw_region(image, &left_checkbox_border(item), Rgba([5, 5, 5, 255]));
             draw_region(image, &top_checkbox_border(item), Rgba([5, 5, 5, 255]));
+        }
+    }
+
+    fn draw_evidence_page_markers(image: &mut RgbaImage) {
+        let regions = [
+            Region {
+                x_pct: 0.220,
+                y_pct: 0.145,
+                w_pct: 0.110,
+                h_pct: 0.055,
+            },
+            Region {
+                x_pct: 0.530,
+                y_pct: 0.150,
+                w_pct: 0.110,
+                h_pct: 0.055,
+            },
+            Region {
+                x_pct: 0.225,
+                y_pct: 0.197,
+                w_pct: 0.260,
+                h_pct: 0.008,
+            },
+            Region {
+                x_pct: 0.533,
+                y_pct: 0.197,
+                w_pct: 0.260,
+                h_pct: 0.008,
+            },
+            Region {
+                x_pct: 0.540,
+                y_pct: 0.220,
+                w_pct: 0.260,
+                h_pct: 0.075,
+            },
+        ];
+
+        for region in regions {
+            draw_region(image, &region, Rgba([5, 5, 5, 255]));
         }
     }
 

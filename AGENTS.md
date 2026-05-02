@@ -44,7 +44,7 @@ cargo run -- --config my-tracker.toml
 - `src/lib.rs`: Crate module root.
 - `src/config.rs`: Config schema, defaults, load-or-create behavior, validation, config tests.
 - `src/window.rs`: Phasmophobia window discovery using `xcap`.
-- `src/page.rs`: Evidence-page visibility gate. Requires journal paper, evidence checkbox column, and right-side ghost-name grid.
+- `src/page.rs`: Evidence-page visibility gate. Requires journal paper, Evidence-page title/prompt markers, evidence checkbox column, and right-side ghost-name grid.
 - `src/evidence.rs`: Evidence-state classification from configured selected/rejected regions.
 - `src/ghosts.rs`: Ghost evidence knowledge loading, default ghost data, and candidate filtering.
 - `src/tracker.rs`: Main loop, window capture, page gating, state transition logging, end-of-game reset handling, Ctrl-C handling.
@@ -66,7 +66,7 @@ On Windows, `cargo build` may fail with access denied if `target\debug\phasmo_ev
 ## Common Failure Modes
 
 - False positives during gameplay: tighten `src/page.rs`; do not weaken page gating without adding tests.
-- False positives on other journal pages: require Evidence-page-specific markers, especially the right-side ghost grid.
+- False positives on other journal pages: require Evidence-page-specific markers, especially the Evidence headings/prompt and right-side ghost grid.
 - Missed quick selections: lower `poll_ms`, avoid extra stable-frame requirements, or improve capture strategy.
 - All evidence appears selected: selected sample regions may be sitting on paper/text instead of the checkbox mark.
 - Rejected evidence appears as conflict/selected: remember the strikethrough crosses the checkbox; rejected should take priority.
