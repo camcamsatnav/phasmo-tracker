@@ -11,10 +11,15 @@ struct Region {
 }
 
 pub fn evidence_page_visible(image: &RgbaImage, evidence: &[EvidenceConfig]) -> bool {
-    paper_visible(image)
+    journal_spread_visible(image)
         && evidence_page_markers_visible(image)
         && checkbox_count(image, evidence) >= required_checkbox_count(evidence)
+        && evidence_label_count(image, evidence) >= required_evidence_label_count(evidence)
         && ghost_grid_visible(image)
+}
+
+fn journal_spread_visible(image: &RgbaImage) -> bool {
+    paper_visible(image) && yellow_paper_coverage_visible(image)
 }
 
 fn paper_visible(image: &RgbaImage) -> bool {
@@ -46,6 +51,31 @@ fn paper_visible(image: &RgbaImage) -> bool {
         >= 2
 }
 
+fn yellow_paper_coverage_visible(image: &RgbaImage) -> bool {
+    let x_positions = [0.25, 0.39, 0.56, 0.72];
+    let y_positions = [0.25, 0.48, 0.72];
+    let mut yellow_regions = 0;
+    let mut total_regions = 0;
+
+    for y_pct in y_positions {
+        for x_pct in x_positions {
+            total_regions += 1;
+            let region = Region {
+                x_pct,
+                y_pct,
+                w_pct: 0.075,
+                h_pct: 0.055,
+            };
+
+            if yellow_paper_ratio(image, &region) >= 0.45 {
+                yellow_regions += 1;
+            }
+        }
+    }
+
+    yellow_regions >= total_regions - 2
+}
+
 fn checkbox_count(image: &RgbaImage, evidence: &[EvidenceConfig]) -> usize {
     evidence
         .iter()
@@ -53,6 +83,13 @@ fn checkbox_count(image: &RgbaImage, evidence: &[EvidenceConfig]) -> usize {
             dark_ratio(image, &left_checkbox_border(item)) >= 0.10
                 || dark_ratio(image, &top_checkbox_border(item)) >= 0.10
         })
+        .count()
+}
+
+fn evidence_label_count(image: &RgbaImage, evidence: &[EvidenceConfig]) -> usize {
+    evidence
+        .iter()
+        .filter(|item| evidence_label_ink_ratio(image, &evidence_label_region(item)) >= 0.020)
         .count()
 }
 
@@ -64,13 +101,24 @@ fn required_checkbox_count(evidence: &[EvidenceConfig]) -> usize {
     }
 }
 
+fn required_evidence_label_count(evidence: &[EvidenceConfig]) -> usize {
+    match evidence.len() {
+        0 => usize::MAX,
+        1..=5 => evidence.len(),
+        _ => 6,
+    }
+}
+
 fn ghost_grid_visible(image: &RgbaImage) -> bool {
     let columns = [0.61, 0.74, 0.87];
     let rows = [0.28, 0.36, 0.44, 0.52, 0.60, 0.68, 0.76, 0.84];
     let mut visible_cells = 0;
+    let mut visible_rows = 0;
+    let mut visible_columns = [0usize; 3];
 
     for y_pct in rows {
-        for x_pct in columns {
+        let mut row_cells = 0;
+        for (column_index, x_pct) in columns.iter().copied().enumerate() {
             let region = Region {
                 x_pct,
                 y_pct,
@@ -80,18 +128,36 @@ fn ghost_grid_visible(image: &RgbaImage) -> bool {
 
             if ghost_name_ink_ratio(image, &region) >= 0.025 {
                 visible_cells += 1;
+                row_cells += 1;
+                visible_columns[column_index] += 1;
             }
+        }
+
+        if row_cells >= 2 {
+            visible_rows += 1;
         }
     }
 
-    visible_cells >= 10
+    visible_cells >= 6
+        && visible_rows >= 3
+        && visible_columns
+            .iter()
+            .filter(|visible_in_column| **visible_in_column >= 1)
+            .count()
+            >= 2
 }
 
 fn evidence_page_markers_visible(image: &RgbaImage) -> bool {
-    evidence_titles_visible(image) && right_page_prompt_visible(image)
+    evidence_words_visible(image) && right_page_prompt_visible(image)
 }
 
-fn evidence_titles_visible(image: &RgbaImage) -> bool {
+fn evidence_words_visible(image: &RgbaImage) -> bool {
+    let evidence_tab = Region {
+        x_pct: 0.515,
+        y_pct: 0.060,
+        w_pct: 0.070,
+        h_pct: 0.040,
+    };
     let left_title = Region {
         x_pct: 0.220,
         y_pct: 0.145,
@@ -117,8 +183,12 @@ fn evidence_titles_visible(image: &RgbaImage) -> bool {
         h_pct: 0.008,
     };
 
-    title_ink_ratio(image, &left_title) >= 0.035
-        && title_ink_ratio(image, &right_title) >= 0.030
+    let evidence_word_count = [evidence_tab, left_title, right_title]
+        .iter()
+        .filter(|region| title_ink_ratio(image, region) >= 0.030)
+        .count();
+
+    evidence_word_count >= 3
         && dark_ratio(image, &left_rule) >= 0.30
         && dark_ratio(image, &right_rule) >= 0.30
 }
@@ -152,9 +222,36 @@ fn top_checkbox_border(item: &EvidenceConfig) -> Region {
     }
 }
 
+fn evidence_label_region(item: &EvidenceConfig) -> Region {
+    Region {
+        x_pct: item.selected.x_pct + item.selected.w_pct * 3.0,
+        y_pct: (item.selected.y_pct - item.selected.h_pct * 0.25).max(0.0),
+        w_pct: 0.195,
+        h_pct: item.selected.h_pct * 2.0,
+    }
+}
+
 fn light_paper_ratio(image: &RgbaImage, region: &Region) -> f64 {
     ratio(image, region, |pixel| {
         pixel[0] >= 145 && pixel[1] >= 135 && pixel[2] >= 95
+    })
+}
+
+fn yellow_paper_ratio(image: &RgbaImage, region: &Region) -> f64 {
+    ratio(image, region, |pixel| {
+        let red = pixel[0] as i16;
+        let green = pixel[1] as i16;
+        let blue = pixel[2] as i16;
+
+        red >= 135
+            && green >= 125
+            && blue >= 80
+            && red <= 245
+            && green <= 235
+            && blue <= 205
+            && red >= blue + 25
+            && green >= blue + 15
+            && (red - green).abs() <= 45
     })
 }
 
@@ -173,6 +270,12 @@ fn ghost_name_ink_ratio(image: &RgbaImage, region: &Region) -> f64 {
 fn title_ink_ratio(image: &RgbaImage, region: &Region) -> f64 {
     ratio(image, region, |pixel| {
         pixel[0] <= 95 && pixel[1] <= 90 && pixel[2] <= 75
+    })
+}
+
+fn evidence_label_ink_ratio(image: &RgbaImage, region: &Region) -> f64 {
+    ratio(image, region, |pixel| {
+        pixel[0] <= 115 && pixel[1] <= 110 && pixel[2] <= 95
     })
 }
 
@@ -241,11 +344,25 @@ mod tests {
     }
 
     #[test]
+    fn rejects_evidence_layout_without_yellow_journal_spread() {
+        let mut image = RgbaImage::from_pixel(1000, 1000, Rgba([190, 190, 190, 255]));
+        let evidence = evidence_items();
+
+        draw_evidence_checkboxes(&mut image, &evidence);
+        draw_evidence_labels(&mut image, &evidence);
+        draw_evidence_page_markers(&mut image);
+        draw_ghost_grid(&mut image);
+
+        assert!(!evidence_page_visible(&image, &evidence));
+    }
+
+    #[test]
     fn rejects_journal_page_with_checkboxes_but_without_evidence_markers() {
         let mut image = RgbaImage::from_pixel(1000, 1000, Rgba([190, 180, 130, 255]));
         let evidence = evidence_items();
 
         draw_evidence_checkboxes(&mut image, &evidence);
+        draw_evidence_labels(&mut image, &evidence);
         draw_ghost_grid(&mut image);
 
         assert!(!evidence_page_visible(&image, &evidence));
@@ -256,15 +373,34 @@ mod tests {
         let mut image = RgbaImage::from_pixel(1000, 1000, Rgba([190, 180, 130, 255]));
         let evidence = evidence_items();
 
-        for item in &evidence {
-            draw_region(
-                &mut image,
-                &left_checkbox_border(item),
-                Rgba([5, 5, 5, 255]),
-            );
-            draw_region(&mut image, &top_checkbox_border(item), Rgba([5, 5, 5, 255]));
-        }
+        draw_evidence_checkboxes(&mut image, &evidence);
+        draw_evidence_labels(&mut image, &evidence);
         draw_evidence_page_markers(&mut image);
+
+        assert!(!evidence_page_visible(&image, &evidence));
+    }
+
+    #[test]
+    fn rejects_journal_page_without_evidence_tab_marker() {
+        let mut image = RgbaImage::from_pixel(1000, 1000, Rgba([190, 180, 130, 255]));
+        let evidence = evidence_items();
+
+        draw_evidence_checkboxes(&mut image, &evidence);
+        draw_evidence_labels(&mut image, &evidence);
+        draw_evidence_page_body_markers(&mut image);
+        draw_ghost_grid(&mut image);
+
+        assert!(!evidence_page_visible(&image, &evidence));
+    }
+
+    #[test]
+    fn rejects_journal_page_without_evidence_label_rows() {
+        let mut image = RgbaImage::from_pixel(1000, 1000, Rgba([190, 180, 130, 255]));
+        let evidence = evidence_items();
+
+        draw_evidence_checkboxes(&mut image, &evidence);
+        draw_evidence_page_markers(&mut image);
+        draw_ghost_grid(&mut image);
 
         assert!(!evidence_page_visible(&image, &evidence));
     }
@@ -275,6 +411,7 @@ mod tests {
         let evidence = evidence_items();
 
         draw_evidence_checkboxes(&mut image, &evidence);
+        draw_evidence_labels(&mut image, &evidence);
         draw_evidence_page_markers(&mut image);
         draw_ghost_grid(&mut image);
 
@@ -288,7 +425,37 @@ mod tests {
         }
     }
 
+    fn draw_evidence_labels(image: &mut RgbaImage, evidence: &[EvidenceConfig]) {
+        for item in evidence {
+            let label = evidence_label_region(item);
+            draw_region(
+                image,
+                &Region {
+                    x_pct: label.x_pct,
+                    y_pct: label.y_pct + label.h_pct * 0.35,
+                    w_pct: label.w_pct * 0.45,
+                    h_pct: label.h_pct * 0.12,
+                },
+                Rgba([5, 5, 5, 255]),
+            );
+        }
+    }
+
     fn draw_evidence_page_markers(image: &mut RgbaImage) {
+        draw_region(
+            image,
+            &Region {
+                x_pct: 0.515,
+                y_pct: 0.060,
+                w_pct: 0.070,
+                h_pct: 0.040,
+            },
+            Rgba([5, 5, 5, 255]),
+        );
+        draw_evidence_page_body_markers(image);
+    }
+
+    fn draw_evidence_page_body_markers(image: &mut RgbaImage) {
         let regions = [
             Region {
                 x_pct: 0.220,
@@ -329,7 +496,7 @@ mod tests {
 
     fn draw_ghost_grid(image: &mut RgbaImage) {
         let columns = [0.61, 0.74, 0.87];
-        let rows = [0.28, 0.36, 0.44, 0.52];
+        let rows = [0.28, 0.36, 0.44, 0.52, 0.60, 0.68];
 
         for y_pct in rows {
             for x_pct in columns {
