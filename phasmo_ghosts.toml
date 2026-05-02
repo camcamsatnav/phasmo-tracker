@@ -1,0 +1,108 @@
+[[ghosts]]
+name = "Banshee"
+evidence = ["D.O.T.S Projector", "Ghost Orb", "Ultraviolet"]
+
+[[ghosts]]
+name = "Dayan"
+evidence = ["EMF Level 5", "Ghost Orb", "Spirit Box"]
+
+[[ghosts]]
+name = "Demon"
+evidence = ["Freezing Temperatures", "Ghost Writing", "Ultraviolet"]
+
+[[ghosts]]
+name = "Deogen"
+evidence = ["D.O.T.S Projector", "Ghost Writing", "Spirit Box"]
+
+[[ghosts]]
+name = "Gallu"
+evidence = ["EMF Level 5", "Spirit Box", "Ultraviolet"]
+
+[[ghosts]]
+name = "Goryo"
+evidence = ["D.O.T.S Projector", "EMF Level 5", "Ultraviolet"]
+
+[[ghosts]]
+name = "Hantu"
+evidence = ["Freezing Temperatures", "Ghost Orb", "Ultraviolet"]
+
+[[ghosts]]
+name = "Jinn"
+evidence = ["EMF Level 5", "Freezing Temperatures", "Ultraviolet"]
+
+[[ghosts]]
+name = "Mare"
+evidence = ["Ghost Orb", "Ghost Writing", "Spirit Box"]
+
+[[ghosts]]
+name = "Moroi"
+evidence = ["Freezing Temperatures", "Ghost Writing", "Spirit Box"]
+
+[[ghosts]]
+name = "Myling"
+evidence = ["EMF Level 5", "Ghost Writing", "Ultraviolet"]
+
+[[ghosts]]
+name = "Obake"
+evidence = ["EMF Level 5", "Ghost Orb", "Ultraviolet"]
+
+[[ghosts]]
+name = "Obambo"
+evidence = ["D.O.T.S Projector", "Ghost Writing", "Ultraviolet"]
+
+[[ghosts]]
+name = "Oni"
+evidence = ["D.O.T.S Projector", "EMF Level 5", "Freezing Temperatures"]
+
+[[ghosts]]
+name = "Onryo"
+evidence = ["Freezing Temperatures", "Ghost Orb", "Spirit Box"]
+
+[[ghosts]]
+name = "Phantom"
+evidence = ["D.O.T.S Projector", "Spirit Box", "Ultraviolet"]
+
+[[ghosts]]
+name = "Poltergeist"
+evidence = ["Ghost Writing", "Spirit Box", "Ultraviolet"]
+
+[[ghosts]]
+name = "Raiju"
+evidence = ["D.O.T.S Projector", "EMF Level 5", "Ghost Orb"]
+
+[[ghosts]]
+name = "Revenant"
+evidence = ["Freezing Temperatures", "Ghost Orb", "Ghost Writing"]
+
+[[ghosts]]
+name = "Shade"
+evidence = ["D.O.T.S Projector", "Freezing Temperatures", "Ghost Writing"]
+
+[[ghosts]]
+name = "Spirit"
+evidence = ["EMF Level 5", "Ghost Writing", "Spirit Box"]
+
+[[ghosts]]
+name = "Thaye"
+evidence = ["D.O.T.S Projector", "Ghost Orb", "Ghost Writing"]
+
+[[ghosts]]
+name = "The Mimic"
+evidence = ["Freezing Temperatures", "Spirit Box", "Ultraviolet"]
+false_evidence = ["Ghost Orb"]
+
+[[ghosts]]
+name = "The Twins"
+evidence = ["EMF Level 5", "Freezing Temperatures", "Spirit Box"]
+
+[[ghosts]]
+name = "Wraith"
+evidence = ["D.O.T.S Projector", "EMF Level 5", "Spirit Box"]
+
+[[ghosts]]
+name = "Yokai"
+evidence = ["D.O.T.S Projector", "Ghost Orb", "Spirit Box"]
+
+[[ghosts]]
+name = "Yurei"
+evidence = ["D.O.T.S Projector", "Freezing Temperatures", "Ghost Orb"]

@@ -24,6 +24,12 @@ Use a custom config path when needed:
 cargo run -- --config my-tracker.toml
 ```
 
+Use a custom ghost evidence data file when needed:
+
+```powershell
+cargo run -- --ghosts my-ghosts.toml
+```
+
 ## Config
 
 The config is persistent app state. It should usually be created once and left alone.
@@ -31,5 +37,7 @@ The config is persistent app state. It should usually be created once and left a
 It may need to change if Phasmophobia changes the journal UI, if your game language moves the evidence labels/marks, or if a very different aspect ratio changes the journal layout. Normal resolution changes should work because regions are stored as normalized percentages of the captured window.
 
 The default tracker cadence is tuned for quick journal interactions: `poll_ms = 10` and `stable_frames = 1`.
+
+Ghost identification data is stored separately in `phasmo_ghosts.toml`. Each `[[ghosts]]` entry lists the evidence that can identify that ghost. `false_evidence` is supported for special cases such as The Mimic's ghost orbs.
 
 Snapshots such as `phasmo-window.png` are only temporary calibration references. The tracker does not need them after the config is correct.
