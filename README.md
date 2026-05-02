@@ -40,4 +40,6 @@ The default tracker cadence is tuned for quick journal interactions: `poll_ms = 
 
 Ghost identification data is stored separately in `phasmo_ghosts.toml`. Each `[[ghosts]]` entry lists the evidence that can identify that ghost. `false_evidence` is supported for special cases such as The Mimic's ghost orbs.
 
+If the tracker has active round state, the Evidence page disappears, and then the Evidence page later reappears fully clear, the app treats that as a game-over journal reset. It clears the current evidence selection before tracking the next round, which also clears the derived possible-ghost output.
+
 Snapshots such as `phasmo-window.png` are only temporary calibration references. The tracker does not need them after the config is correct.

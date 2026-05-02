@@ -13,6 +13,18 @@ use crate::ghosts::{self, GhostKnowledge};
 use crate::page;
 use crate::window;
 
+#[derive(Debug, Default)]
+struct TrackerState {
+    committed: BTreeMap<String, EvidenceState>,
+    pending: BTreeMap<String, (EvidenceState, usize)>,
+    evidence_page_hidden_after_activity: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum GameOverSignal {
+    JournalReset,
+}
+
 pub fn run(config_path: &Path, ghosts_path: &Path) -> Result<()> {
     let loaded = config::load_or_create(config_path)?;
     let config = loaded.config;
@@ -34,8 +46,7 @@ pub fn run(config_path: &Path, ghosts_path: &Path) -> Result<()> {
 
     let running = install_ctrlc_handler()?;
     let started = Instant::now();
-    let mut committed = BTreeMap::new();
-    let mut pending = BTreeMap::new();
+    let mut state = TrackerState::default();
     let mut page_was_visible = None;
 
     while running.load(Ordering::SeqCst) {
@@ -54,7 +65,7 @@ pub fn run(config_path: &Path, ghosts_path: &Path) -> Result<()> {
 
         let page_visible = page::evidence_page_visible(&image, &config.evidence);
         if !page_visible {
-            pending.clear();
+            state.note_evidence_page_not_visible();
             if page_was_visible != Some(false) {
                 println!(
                     "[{:>6.2}s] evidence page not visible; waiting",
@@ -76,7 +87,13 @@ pub fn run(config_path: &Path, ghosts_path: &Path) -> Result<()> {
 
         let states = evidence::evaluate(&image, &config.evidence);
 
-        if committed.is_empty() {
+        if let Some(signal) = detect_game_over(&state, &states) {
+            handle_end_of_game_actions(started.elapsed().as_secs_f32(), &mut state, states, signal);
+            thread::sleep(poll_interval(config.tracker.poll_ms));
+            continue;
+        }
+
+        if state.committed.is_empty() {
             println!(
                 "[{:>6.2}s] captured {}x{}; initial state: {}",
                 started.elapsed().as_secs_f32(),
@@ -84,17 +101,17 @@ pub fn run(config_path: &Path, ghosts_path: &Path) -> Result<()> {
                 image.height(),
                 summarize_states(&states)
             );
-            committed = states;
+            state.committed = states;
             emit_possible_ghosts(
                 started.elapsed().as_secs_f32(),
                 &ghost_knowledge,
-                &committed,
+                &state.committed,
             );
         } else {
             emit_stable_changes(
                 started.elapsed().as_secs_f32(),
-                &mut committed,
-                &mut pending,
+                &mut state.committed,
+                &mut state.pending,
                 states,
                 config.tracker.stable_frames.max(1),
                 &ghost_knowledge,
@@ -108,8 +125,65 @@ pub fn run(config_path: &Path, ghosts_path: &Path) -> Result<()> {
     Ok(())
 }
 
+impl TrackerState {
+    fn has_round_activity(&self) -> bool {
+        self.committed
+            .values()
+            .any(|state| matches!(state, EvidenceState::Selected | EvidenceState::Rejected))
+    }
+
+    fn note_evidence_page_not_visible(&mut self) {
+        self.pending.clear();
+        if self.has_round_activity() {
+            self.evidence_page_hidden_after_activity = true;
+        }
+    }
+
+    fn reset_for_next_round(&mut self, current: BTreeMap<String, EvidenceState>) {
+        self.committed = current;
+        self.pending.clear();
+        self.evidence_page_hidden_after_activity = false;
+    }
+}
+
 fn poll_interval(poll_ms: u64) -> Duration {
     Duration::from_millis(poll_ms.max(1))
+}
+
+fn detect_game_over(
+    state: &TrackerState,
+    current: &BTreeMap<String, EvidenceState>,
+) -> Option<GameOverSignal> {
+    if state.has_round_activity()
+        && state.evidence_page_hidden_after_activity
+        && all_evidence_clear(current)
+    {
+        Some(GameOverSignal::JournalReset)
+    } else {
+        None
+    }
+}
+
+fn handle_end_of_game_actions(
+    elapsed_secs: f32,
+    state: &mut TrackerState,
+    current: BTreeMap<String, EvidenceState>,
+    signal: GameOverSignal,
+) {
+    state.reset_for_next_round(current);
+    println!("[{elapsed_secs:>6.2}s] game over detected ({signal}); reset evidence selection");
+}
+
+fn all_evidence_clear(states: &BTreeMap<String, EvidenceState>) -> bool {
+    !states.is_empty() && states.values().all(|state| *state == EvidenceState::Clear)
+}
+
+impl std::fmt::Display for GameOverSignal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GameOverSignal::JournalReset => write!(f, "journal reset"),
+        }
+    }
 }
 
 fn emit_stable_changes(
@@ -209,4 +283,88 @@ fn install_ctrlc_handler() -> Result<Arc<AtomicBool>> {
     })
     .context("failed to install Ctrl-C handler")?;
     Ok(running)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn detects_game_over_when_active_journal_reappears_clear() {
+        let mut state = TrackerState {
+            committed: states(&[
+                ("EMF Level 5", EvidenceState::Selected),
+                ("Ghost Orb", EvidenceState::Clear),
+            ]),
+            ..TrackerState::default()
+        };
+        state.note_evidence_page_not_visible();
+
+        assert_eq!(
+            detect_game_over(
+                &state,
+                &states(&[
+                    ("EMF Level 5", EvidenceState::Clear),
+                    ("Ghost Orb", EvidenceState::Clear),
+                ])
+            ),
+            Some(GameOverSignal::JournalReset)
+        );
+    }
+
+    #[test]
+    fn does_not_detect_game_over_before_round_activity() {
+        let mut state = TrackerState {
+            committed: states(&[
+                ("EMF Level 5", EvidenceState::Clear),
+                ("Ghost Orb", EvidenceState::Clear),
+            ]),
+            ..TrackerState::default()
+        };
+        state.note_evidence_page_not_visible();
+
+        assert_eq!(
+            detect_game_over(
+                &state,
+                &states(&[
+                    ("EMF Level 5", EvidenceState::Clear),
+                    ("Ghost Orb", EvidenceState::Clear),
+                ])
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn end_of_game_actions_reset_evidence_selection() {
+        let mut state = TrackerState {
+            committed: states(&[
+                ("EMF Level 5", EvidenceState::Selected),
+                ("Ghost Orb", EvidenceState::Rejected),
+            ]),
+            pending: BTreeMap::from([("Spirit Box".to_string(), (EvidenceState::Selected, 1))]),
+            evidence_page_hidden_after_activity: true,
+        };
+
+        handle_end_of_game_actions(
+            1.0,
+            &mut state,
+            states(&[
+                ("EMF Level 5", EvidenceState::Clear),
+                ("Ghost Orb", EvidenceState::Clear),
+            ]),
+            GameOverSignal::JournalReset,
+        );
+
+        assert!(state.pending.is_empty());
+        assert!(!state.evidence_page_hidden_after_activity);
+        assert!(all_evidence_clear(&state.committed));
+    }
+
+    fn states(entries: &[(&str, EvidenceState)]) -> BTreeMap<String, EvidenceState> {
+        entries
+            .iter()
+            .map(|(name, state)| ((*name).to_string(), *state))
+            .collect()
+    }
 }
