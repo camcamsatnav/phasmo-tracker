@@ -72,6 +72,8 @@ Launching that one executable opens the Electron UI and starts the bundled Rust 
 The portable executable is self-extracting, so it trades some launch speed for being a single file.
 For the fastest startup, run `release\win-unpacked\Phasmo Evidence Tracker.exe`, which is generated alongside the portable exe.
 
+GitHub Actions also builds the portable exe on every push. Open the `Desktop Artifact` workflow run for a commit and download the `phasmo-evidence-tracker-windows-...` artifact.
+
 In packaged builds, `phasmo_tracker.toml` and `phasmo_ghosts.toml` are created in Electron's app data folder instead of next to the executable, so the app can run from a read-only or temporary location.
 
 ## Config

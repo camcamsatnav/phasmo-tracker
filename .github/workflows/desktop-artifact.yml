@@ -1,0 +1,51 @@
+name: Desktop Artifact
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  windows-portable:
+    name: Windows portable EXE
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Install Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 25
+          cache: pnpm
+
+      - name: Install Rust
+        shell: pwsh
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build portable EXE
+        run: pnpm run bundle
+
+      - name: Upload portable EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: phasmo-evidence-tracker-windows-${{ github.sha }}
+          path: release/*-portable.exe
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
