@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::io::{self, Write};
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -6,12 +7,19 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result, anyhow};
+use serde::Serialize;
 
 use crate::config;
 use crate::evidence::{self, EvidenceState};
 use crate::ghosts::{self, GhostKnowledge};
 use crate::page;
 use crate::window;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OutputMode {
+    Human,
+    Json,
+}
 
 #[derive(Debug, Default)]
 struct TrackerState {
@@ -25,24 +33,112 @@ enum GameOverSignal {
     JournalReset,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum TrackerEvent {
+    ConfigCreated {
+        path: String,
+    },
+    GhostDataCreated {
+        path: String,
+    },
+    TrackerStarted {
+        config_path: String,
+        ghosts_path: String,
+        app_name_contains: String,
+        window_title_contains: String,
+        poll_ms: u64,
+        stable_frames: usize,
+        evidence: Vec<String>,
+        ghosts: Vec<String>,
+    },
+    WindowSearchError {
+        message: String,
+    },
+    PageVisibility {
+        elapsed_secs: f32,
+        visible: bool,
+    },
+    EvidenceChange {
+        elapsed_secs: f32,
+        name: String,
+        old_state: EvidenceState,
+        new_state: EvidenceState,
+    },
+    Snapshot {
+        elapsed_secs: f32,
+        reason: SnapshotReason,
+        image_width: u32,
+        image_height: u32,
+        evidence: Vec<EvidenceSnapshot>,
+        selected_evidence: Vec<String>,
+        rejected_evidence: Vec<String>,
+        possible_ghosts: Vec<String>,
+        changes: Vec<EvidenceChangeSnapshot>,
+    },
+    GameOver {
+        elapsed_secs: f32,
+        signal: String,
+    },
+    Stopped,
+}
+
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum SnapshotReason {
+    Initial,
+    Change,
+    GameOverReset,
+}
+
+#[derive(Debug, Serialize)]
+struct EvidenceSnapshot {
+    name: String,
+    state: EvidenceState,
+}
+
+#[derive(Debug, Serialize)]
+struct EvidenceChangeSnapshot {
+    name: String,
+    old_state: EvidenceState,
+    new_state: EvidenceState,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct FrameSize {
+    width: u32,
+    height: u32,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct TrackerOutput {
+    mode: OutputMode,
+}
+
 pub fn run(config_path: &Path, ghosts_path: &Path) -> Result<()> {
+    run_with_output_mode(config_path, ghosts_path, OutputMode::Human)
+}
+
+pub fn run_with_output_mode(
+    config_path: &Path,
+    ghosts_path: &Path,
+    output_mode: OutputMode,
+) -> Result<()> {
+    let output = TrackerOutput::new(output_mode);
     let loaded = config::load_or_create(config_path)?;
     let config = loaded.config;
     let loaded_ghosts = ghosts::load_or_create(ghosts_path, &config.evidence)?;
     let ghost_knowledge = loaded_ghosts.knowledge;
 
     if loaded.created {
-        println!("created default config at {}", config_path.display());
+        output.config_created(config_path);
     }
 
     if loaded_ghosts.created {
-        println!("created default ghost data at {}", ghosts_path.display());
+        output.ghost_data_created(ghosts_path);
     }
 
-    println!(
-        "looking for a visible app/window matching app={:?}, title={:?}",
-        config.tracker.app_name_contains, config.tracker.window_title_contains
-    );
+    output.tracker_started(config_path, ghosts_path, &config, &ghost_knowledge);
 
     let running = install_ctrlc_handler()?;
     let started = Instant::now();
@@ -53,7 +149,7 @@ pub fn run(config_path: &Path, ghosts_path: &Path) -> Result<()> {
         let target = match window::find_target_window(&config.tracker) {
             Ok(target) => target,
             Err(err) => {
-                eprintln!("{err}");
+                output.window_search_error(&err.to_string());
                 thread::sleep(Duration::from_secs(2));
                 continue;
             }
@@ -63,14 +159,12 @@ pub fn run(config_path: &Path, ghosts_path: &Path) -> Result<()> {
             .capture_image()
             .map_err(|err| anyhow!("failed to capture target window: {err}"))?;
 
+        let elapsed_secs = started.elapsed().as_secs_f32();
         let page_visible = page::evidence_page_visible(&image, &config.evidence);
         if !page_visible {
             state.note_evidence_page_not_visible();
             if page_was_visible != Some(false) {
-                println!(
-                    "[{:>6.2}s] evidence page not visible; waiting",
-                    started.elapsed().as_secs_f32()
-                );
+                output.page_visibility(elapsed_secs, false);
             }
             page_was_visible = Some(false);
             thread::sleep(poll_interval(config.tracker.poll_ms));
@@ -78,50 +172,56 @@ pub fn run(config_path: &Path, ghosts_path: &Path) -> Result<()> {
         }
 
         if page_was_visible == Some(false) {
-            println!(
-                "[{:>6.2}s] evidence page visible",
-                started.elapsed().as_secs_f32()
-            );
+            output.page_visibility(elapsed_secs, true);
         }
         page_was_visible = Some(true);
 
         let states = evidence::evaluate(&image, &config.evidence);
 
         if let Some(signal) = detect_game_over(&state, &states) {
-            handle_end_of_game_actions(started.elapsed().as_secs_f32(), &mut state, states, signal);
+            handle_end_of_game_actions(
+                elapsed_secs,
+                &mut state,
+                states,
+                signal,
+                &output,
+                &ghost_knowledge,
+                FrameSize {
+                    width: image.width(),
+                    height: image.height(),
+                },
+            );
             thread::sleep(poll_interval(config.tracker.poll_ms));
             continue;
         }
 
         if state.committed.is_empty() {
-            println!(
-                "[{:>6.2}s] captured {}x{}; initial state: {}",
-                started.elapsed().as_secs_f32(),
+            state.committed = states;
+            output.initial_snapshot(
+                elapsed_secs,
                 image.width(),
                 image.height(),
-                summarize_states(&states)
-            );
-            state.committed = states;
-            emit_possible_ghosts(
-                started.elapsed().as_secs_f32(),
                 &ghost_knowledge,
                 &state.committed,
             );
         } else {
             emit_stable_changes(
-                started.elapsed().as_secs_f32(),
+                elapsed_secs,
                 &mut state.committed,
                 &mut state.pending,
                 states,
                 config.tracker.stable_frames.max(1),
                 &ghost_knowledge,
+                image.width(),
+                image.height(),
+                &output,
             );
         }
 
         thread::sleep(poll_interval(config.tracker.poll_ms));
     }
 
-    println!("stopped");
+    output.stopped();
     Ok(())
 }
 
@@ -143,6 +243,285 @@ impl TrackerState {
         self.committed = current;
         self.pending.clear();
         self.evidence_page_hidden_after_activity = false;
+    }
+}
+
+impl TrackerOutput {
+    fn new(mode: OutputMode) -> Self {
+        Self { mode }
+    }
+
+    fn config_created(&self, path: &Path) {
+        match self.mode {
+            OutputMode::Human => {
+                self.print_stdout(format!("created default config at {}", path.display()))
+            }
+            OutputMode::Json => self.emit_json(TrackerEvent::ConfigCreated {
+                path: path.display().to_string(),
+            }),
+        }
+    }
+
+    fn ghost_data_created(&self, path: &Path) {
+        match self.mode {
+            OutputMode::Human => {
+                self.print_stdout(format!("created default ghost data at {}", path.display()))
+            }
+            OutputMode::Json => self.emit_json(TrackerEvent::GhostDataCreated {
+                path: path.display().to_string(),
+            }),
+        }
+    }
+
+    fn tracker_started(
+        &self,
+        config_path: &Path,
+        ghosts_path: &Path,
+        config: &config::Config,
+        ghost_knowledge: &GhostKnowledge,
+    ) {
+        match self.mode {
+            OutputMode::Human => self.print_stdout(format!(
+                "looking for a visible app/window matching app={:?}, title={:?}",
+                config.tracker.app_name_contains, config.tracker.window_title_contains
+            )),
+            OutputMode::Json => self.emit_json(TrackerEvent::TrackerStarted {
+                config_path: config_path.display().to_string(),
+                ghosts_path: ghosts_path.display().to_string(),
+                app_name_contains: config.tracker.app_name_contains.clone(),
+                window_title_contains: config.tracker.window_title_contains.clone(),
+                poll_ms: config.tracker.poll_ms,
+                stable_frames: config.tracker.stable_frames,
+                evidence: config
+                    .evidence
+                    .iter()
+                    .map(|evidence| evidence.name.clone())
+                    .collect(),
+                ghosts: ghost_knowledge
+                    .ghosts
+                    .iter()
+                    .map(|ghost| ghost.name.clone())
+                    .collect(),
+            }),
+        }
+    }
+
+    fn window_search_error(&self, message: &str) {
+        match self.mode {
+            OutputMode::Human => {
+                eprintln!("{message}");
+                let _ = io::stderr().flush();
+            }
+            OutputMode::Json => self.emit_json(TrackerEvent::WindowSearchError {
+                message: message.to_string(),
+            }),
+        }
+    }
+
+    fn page_visibility(&self, elapsed_secs: f32, visible: bool) {
+        match self.mode {
+            OutputMode::Human => {
+                let status = if visible {
+                    "evidence page visible"
+                } else {
+                    "evidence page not visible; waiting"
+                };
+                self.print_stdout(format!("[{elapsed_secs:>6.2}s] {status}"));
+            }
+            OutputMode::Json => {
+                self.emit_json(TrackerEvent::PageVisibility {
+                    elapsed_secs,
+                    visible,
+                });
+            }
+        }
+    }
+
+    fn initial_snapshot(
+        &self,
+        elapsed_secs: f32,
+        image_width: u32,
+        image_height: u32,
+        ghost_knowledge: &GhostKnowledge,
+        states: &BTreeMap<String, EvidenceState>,
+    ) {
+        match self.mode {
+            OutputMode::Human => {
+                self.print_stdout(format!(
+                    "[{elapsed_secs:>6.2}s] captured {image_width}x{image_height}; initial state: {}",
+                    summarize_states(states)
+                ));
+                self.possible_ghosts_summary(elapsed_secs, ghost_knowledge, states);
+            }
+            OutputMode::Json => self.snapshot(
+                elapsed_secs,
+                FrameSize {
+                    width: image_width,
+                    height: image_height,
+                },
+                ghost_knowledge,
+                states,
+                SnapshotReason::Initial,
+                Vec::new(),
+            ),
+        }
+    }
+
+    fn evidence_change(
+        &self,
+        elapsed_secs: f32,
+        name: &str,
+        old_state: EvidenceState,
+        new_state: EvidenceState,
+    ) {
+        match self.mode {
+            OutputMode::Human => self.print_stdout(format!(
+                "[{elapsed_secs:>6.2}s] {name}: {old_state} -> {new_state}"
+            )),
+            OutputMode::Json => self.emit_json(TrackerEvent::EvidenceChange {
+                elapsed_secs,
+                name: name.to_string(),
+                old_state,
+                new_state,
+            }),
+        }
+    }
+
+    fn changed_snapshot(
+        &self,
+        elapsed_secs: f32,
+        image_width: u32,
+        image_height: u32,
+        ghost_knowledge: &GhostKnowledge,
+        states: &BTreeMap<String, EvidenceState>,
+        changes: Vec<EvidenceChangeSnapshot>,
+    ) {
+        match self.mode {
+            OutputMode::Human => {
+                self.possible_ghosts_summary(elapsed_secs, ghost_knowledge, states)
+            }
+            OutputMode::Json => self.snapshot(
+                elapsed_secs,
+                FrameSize {
+                    width: image_width,
+                    height: image_height,
+                },
+                ghost_knowledge,
+                states,
+                SnapshotReason::Change,
+                changes,
+            ),
+        }
+    }
+
+    fn game_over(
+        &self,
+        elapsed_secs: f32,
+        signal: GameOverSignal,
+        image_width: u32,
+        image_height: u32,
+        ghost_knowledge: &GhostKnowledge,
+        states: &BTreeMap<String, EvidenceState>,
+    ) {
+        match self.mode {
+            OutputMode::Human => self.print_stdout(format!(
+                "[{elapsed_secs:>6.2}s] game over detected ({signal}); reset evidence selection"
+            )),
+            OutputMode::Json => {
+                self.emit_json(TrackerEvent::GameOver {
+                    elapsed_secs,
+                    signal: signal.to_string(),
+                });
+                self.snapshot(
+                    elapsed_secs,
+                    FrameSize {
+                        width: image_width,
+                        height: image_height,
+                    },
+                    ghost_knowledge,
+                    states,
+                    SnapshotReason::GameOverReset,
+                    Vec::new(),
+                );
+            }
+        }
+    }
+
+    fn stopped(&self) {
+        match self.mode {
+            OutputMode::Human => self.print_stdout("stopped".to_string()),
+            OutputMode::Json => self.emit_json(TrackerEvent::Stopped),
+        }
+    }
+
+    fn possible_ghosts_summary(
+        &self,
+        elapsed_secs: f32,
+        ghost_knowledge: &GhostKnowledge,
+        states: &BTreeMap<String, EvidenceState>,
+    ) {
+        let selected = evidence_names_with_state(states, EvidenceState::Selected);
+        if selected.is_empty() {
+            return;
+        }
+
+        let rejected = evidence_names_with_state(states, EvidenceState::Rejected);
+        let candidates = possible_ghost_names(ghost_knowledge, states);
+        let selected = selected.join(", ");
+        let rejected = if rejected.is_empty() {
+            "none".to_string()
+        } else {
+            rejected.join(", ")
+        };
+        let candidates = if candidates.is_empty() {
+            "none".to_string()
+        } else {
+            candidates.join(", ")
+        };
+
+        self.print_stdout(format!(
+            "[{elapsed_secs:>6.2}s] selected evidence: {selected}; rejected evidence: {rejected}; possible ghosts: {candidates}"
+        ));
+    }
+
+    fn snapshot(
+        &self,
+        elapsed_secs: f32,
+        frame_size: FrameSize,
+        ghost_knowledge: &GhostKnowledge,
+        states: &BTreeMap<String, EvidenceState>,
+        reason: SnapshotReason,
+        changes: Vec<EvidenceChangeSnapshot>,
+    ) {
+        self.emit_json(TrackerEvent::Snapshot {
+            elapsed_secs,
+            reason,
+            image_width: frame_size.width,
+            image_height: frame_size.height,
+            evidence: states
+                .iter()
+                .map(|(name, state)| EvidenceSnapshot {
+                    name: name.clone(),
+                    state: *state,
+                })
+                .collect(),
+            selected_evidence: evidence_names_with_state(states, EvidenceState::Selected),
+            rejected_evidence: evidence_names_with_state(states, EvidenceState::Rejected),
+            possible_ghosts: possible_ghost_names(ghost_knowledge, states),
+            changes,
+        });
+    }
+
+    fn emit_json(&self, event: TrackerEvent) {
+        let Ok(line) = serde_json::to_string(&event) else {
+            return;
+        };
+        self.print_stdout(line);
+    }
+
+    fn print_stdout(&self, line: String) {
+        println!("{line}");
+        let _ = io::stdout().flush();
     }
 }
 
@@ -169,9 +548,19 @@ fn handle_end_of_game_actions(
     state: &mut TrackerState,
     current: BTreeMap<String, EvidenceState>,
     signal: GameOverSignal,
+    output: &TrackerOutput,
+    ghost_knowledge: &GhostKnowledge,
+    frame_size: FrameSize,
 ) {
     state.reset_for_next_round(current);
-    println!("[{elapsed_secs:>6.2}s] game over detected ({signal}); reset evidence selection");
+    output.game_over(
+        elapsed_secs,
+        signal,
+        frame_size.width,
+        frame_size.height,
+        ghost_knowledge,
+        &state.committed,
+    );
 }
 
 fn all_evidence_clear(states: &BTreeMap<String, EvidenceState>) -> bool {
@@ -186,6 +575,7 @@ impl std::fmt::Display for GameOverSignal {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn emit_stable_changes(
     elapsed_secs: f32,
     committed: &mut BTreeMap<String, EvidenceState>,
@@ -193,8 +583,11 @@ fn emit_stable_changes(
     current: BTreeMap<String, EvidenceState>,
     stable_frames: usize,
     ghost_knowledge: &GhostKnowledge,
+    image_width: u32,
+    image_height: u32,
+    output: &TrackerOutput,
 ) {
-    let mut changed = false;
+    let mut changes = Vec::new();
 
     for (name, new_state) in current {
         let old_state = committed
@@ -215,15 +608,26 @@ fn emit_stable_changes(
         }
 
         if entry.1 >= stable_frames {
-            println!("[{elapsed_secs:>6.2}s] {name}: {old_state} -> {new_state}");
+            output.evidence_change(elapsed_secs, &name, old_state, new_state);
             committed.insert(name.clone(), new_state);
             pending.remove(&name);
-            changed = true;
+            changes.push(EvidenceChangeSnapshot {
+                name,
+                old_state,
+                new_state,
+            });
         }
     }
 
-    if changed {
-        emit_possible_ghosts(elapsed_secs, ghost_knowledge, committed);
+    if !changes.is_empty() {
+        output.changed_snapshot(
+            elapsed_secs,
+            image_width,
+            image_height,
+            ghost_knowledge,
+            committed,
+            changes,
+        );
     }
 }
 
@@ -235,35 +639,6 @@ fn summarize_states(states: &BTreeMap<String, EvidenceState>) -> String {
         .join(", ")
 }
 
-fn emit_possible_ghosts(
-    elapsed_secs: f32,
-    ghost_knowledge: &GhostKnowledge,
-    states: &BTreeMap<String, EvidenceState>,
-) {
-    let selected = evidence_names_with_state(states, EvidenceState::Selected);
-    if selected.is_empty() {
-        return;
-    }
-
-    let rejected = evidence_names_with_state(states, EvidenceState::Rejected);
-    let candidates = ghost_knowledge.possible_ghosts(states);
-    let selected = selected.join(", ");
-    let rejected = if rejected.is_empty() {
-        "none".to_string()
-    } else {
-        rejected.join(", ")
-    };
-    let candidates = if candidates.is_empty() {
-        "none".to_string()
-    } else {
-        candidates.join(", ")
-    };
-
-    println!(
-        "[{elapsed_secs:>6.2}s] selected evidence: {selected}; rejected evidence: {rejected}; possible ghosts: {candidates}"
-    );
-}
-
 fn evidence_names_with_state(
     states: &BTreeMap<String, EvidenceState>,
     target: EvidenceState,
@@ -272,6 +647,17 @@ fn evidence_names_with_state(
         .iter()
         .filter(|(_, state)| **state == target)
         .map(|(name, _)| name.clone())
+        .collect()
+}
+
+fn possible_ghost_names(
+    ghost_knowledge: &GhostKnowledge,
+    states: &BTreeMap<String, EvidenceState>,
+) -> Vec<String> {
+    ghost_knowledge
+        .possible_ghosts(states)
+        .into_iter()
+        .map(str::to_string)
         .collect()
 }
 
@@ -345,6 +731,8 @@ mod tests {
             pending: BTreeMap::from([("Spirit Box".to_string(), (EvidenceState::Selected, 1))]),
             evidence_page_hidden_after_activity: true,
         };
+        let output = TrackerOutput::new(OutputMode::Human);
+        let ghost_knowledge = GhostKnowledge { ghosts: Vec::new() };
 
         handle_end_of_game_actions(
             1.0,
@@ -354,6 +742,12 @@ mod tests {
                 ("Ghost Orb", EvidenceState::Clear),
             ]),
             GameOverSignal::JournalReset,
+            &output,
+            &ghost_knowledge,
+            FrameSize {
+                width: 1000,
+                height: 1000,
+            },
         );
 
         assert!(state.pending.is_empty());

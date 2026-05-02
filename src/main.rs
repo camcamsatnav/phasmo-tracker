@@ -12,9 +12,16 @@ struct Cli {
 
     #[arg(long, default_value = ghosts::DEFAULT_GHOSTS_PATH)]
     ghosts: PathBuf,
+
+    #[arg(long, help = "Emit newline-delimited JSON events for desktop clients")]
+    json: bool,
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    tracker::run(&cli.config, &cli.ghosts)
+    if cli.json {
+        tracker::run_with_output_mode(&cli.config, &cli.ghosts, tracker::OutputMode::Json)
+    } else {
+        tracker::run(&cli.config, &cli.ghosts)
+    }
 }

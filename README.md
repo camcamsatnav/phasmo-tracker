@@ -30,6 +30,34 @@ Use a custom ghost evidence data file when needed:
 cargo run -- --ghosts my-ghosts.toml
 ```
 
+## Desktop UI
+
+The Electron frontend starts the same Rust tracker in JSON event mode and shows the live evidence state, selected/rejected evidence, and possible ghosts.
+
+Install the desktop dependencies once:
+
+```powershell
+npm.cmd install
+```
+
+Run the Vite dev server and Electron app together:
+
+```powershell
+npm.cmd run dev
+```
+
+Build the frontend and open the desktop shell from the production bundle:
+
+```powershell
+npm.cmd run desktop
+```
+
+The JSON event stream is also available directly:
+
+```powershell
+cargo run -- --json
+```
+
 ## Config
 
 The config is persistent app state. It should usually be created once and left alone.

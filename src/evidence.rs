@@ -2,10 +2,12 @@ use std::collections::BTreeMap;
 use std::fmt;
 
 use image::RgbaImage;
+use serde::Serialize;
 
 use crate::config::{EvidenceConfig, RegionMatcher};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum EvidenceState {
     Unknown,
     Clear,
