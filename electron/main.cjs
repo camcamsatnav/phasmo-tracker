@@ -14,8 +14,12 @@ let trackerProcess = null;
 let stdoutBuffer = "";
 let stderrBuffer = "";
 
-function resolveRepoRoot() {
-  return app.isPackaged ? path.dirname(process.execPath) : path.resolve(__dirname, "..");
+function resolveRuntimeRoot() {
+  const root = app.isPackaged ? app.getPath("userData") : path.resolve(__dirname, "..");
+  if (app.isPackaged) {
+    fs.mkdirSync(root, { recursive: true });
+  }
+  return root;
 }
 
 function resolveAppRoot() {
@@ -35,12 +39,17 @@ function createWindow() {
     backgroundColor: "#151512",
     title: "Phasmo Evidence Tracker",
     autoHideMenuBar: true,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
     },
+  });
+
+  mainWindow.once("ready-to-show", () => {
+    mainWindow?.show();
   });
 
   if (shouldLoadDist()) {
@@ -57,7 +66,7 @@ function send(channel, payload) {
 }
 
 function defaultTrackerPaths() {
-  const repoRoot = resolveRepoRoot();
+  const repoRoot = resolveRuntimeRoot();
   return {
     configPath: path.join(repoRoot, "phasmo_tracker.toml"),
     ghostsPath: path.join(repoRoot, "phasmo_ghosts.toml"),
@@ -65,7 +74,7 @@ function defaultTrackerPaths() {
 }
 
 function resolveTrackerCommand(options = {}) {
-  const repoRoot = resolveRepoRoot();
+  const repoRoot = resolveRuntimeRoot();
   const configPath = options.configPath || defaultTrackerPaths().configPath;
   const ghostsPath = options.ghostsPath || defaultTrackerPaths().ghostsPath;
   const trackerArgs = ["--json", "--config", configPath, "--ghosts", ghostsPath];
@@ -80,10 +89,15 @@ function resolveTrackerCommand(options = {}) {
     };
   }
 
-  const candidates = [
-    path.join(repoRoot, "target", "release", binaryName),
-    path.join(repoRoot, "target", "debug", binaryName),
-  ];
+  const candidates = app.isPackaged
+    ? [
+        path.join(process.resourcesPath, "backend", binaryName),
+        path.join(path.dirname(process.execPath), "backend", binaryName),
+      ]
+    : [
+        path.join(repoRoot, "target", "release", binaryName),
+        path.join(repoRoot, "target", "debug", binaryName),
+      ];
 
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) {
@@ -94,6 +108,12 @@ function resolveTrackerCommand(options = {}) {
         label: candidate,
       };
     }
+  }
+
+  if (app.isPackaged) {
+    throw new Error(
+      `Packaged tracker backend not found. Expected ${candidates.join(" or ")}`,
+    );
   }
 
   return {

@@ -153,7 +153,7 @@ export function applyTrackerEvent(
       return {
         ...state,
         elapsedSecs: event.elapsed_secs,
-        status: event.visible ? "Evidence page visible" : "Journal page hidden",
+        status: event.visible ? "Evidence page visible" : "Evidence page hidden",
       };
     case "evidence_change":
       return addActivity(

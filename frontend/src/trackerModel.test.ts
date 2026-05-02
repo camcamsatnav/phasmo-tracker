@@ -87,6 +87,16 @@ describe("trackerModel", () => {
     });
   });
 
+  it("labels hidden page visibility as evidence page hidden", () => {
+    const state = applyTrackerEvent(
+      createInitialTrackerViewState(true),
+      { type: "page_visibility", elapsed_secs: 3, visible: false },
+      5,
+    );
+
+    expect(state.status).toBe("Evidence page hidden");
+  });
+
   it("caps activity at the latest eight entries", () => {
     const state = Array.from({ length: 10 }, (_, index) => index).reduce(
       (current, index) => addActivity(current, "info", `Entry ${index}`, index),
