@@ -11,7 +11,6 @@ pub enum EvidenceState {
     Clear,
     Selected,
     Rejected,
-    Conflict,
 }
 
 impl fmt::Display for EvidenceState {
@@ -21,7 +20,6 @@ impl fmt::Display for EvidenceState {
             EvidenceState::Clear => write!(f, "clear"),
             EvidenceState::Selected => write!(f, "selected"),
             EvidenceState::Rejected => write!(f, "rejected"),
-            EvidenceState::Conflict => write!(f, "conflict"),
         }
     }
 }
@@ -48,9 +46,8 @@ pub fn evaluate(image: &RgbaImage, evidence: &[EvidenceConfig]) -> BTreeMap<Stri
 fn classify(selected: Option<bool>, rejected: Option<bool>) -> EvidenceState {
     match (selected, rejected) {
         (None, _) | (_, None) => EvidenceState::Unknown,
-        (Some(true), Some(true)) => EvidenceState::Conflict,
+        (Some(_), Some(true)) => EvidenceState::Rejected,
         (Some(true), Some(false)) => EvidenceState::Selected,
-        (Some(false), Some(true)) => EvidenceState::Rejected,
         (Some(false), Some(false)) => EvidenceState::Clear,
     }
 }
@@ -129,9 +126,13 @@ mod tests {
     fn classifies_evidence_state() {
         assert_eq!(classify(Some(true), Some(false)), EvidenceState::Selected);
         assert_eq!(classify(Some(false), Some(true)), EvidenceState::Rejected);
-        assert_eq!(classify(Some(true), Some(true)), EvidenceState::Conflict);
         assert_eq!(classify(Some(false), Some(false)), EvidenceState::Clear);
         assert_eq!(classify(None, Some(false)), EvidenceState::Unknown);
+    }
+
+    #[test]
+    fn rejected_wins_when_strikethrough_crosses_checkbox() {
+        assert_eq!(classify(Some(true), Some(true)), EvidenceState::Rejected);
     }
 
     #[test]
