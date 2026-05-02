@@ -139,8 +139,8 @@ fn default_config() -> Config {
         tracker: TrackerConfig {
             window_title_contains: "Phasmophobia".to_string(),
             app_name_contains: "Phasmophobia".to_string(),
-            poll_ms: 350,
-            stable_frames: 2,
+            poll_ms: 10,
+            stable_frames: 1,
         },
         evidence: names
             .iter()

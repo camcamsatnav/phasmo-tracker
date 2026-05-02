@@ -9,6 +9,7 @@ use anyhow::{Context, Result, anyhow};
 
 use crate::config;
 use crate::evidence::{self, EvidenceState};
+use crate::page;
 use crate::window;
 
 pub fn run(config_path: &Path) -> Result<()> {
@@ -28,6 +29,7 @@ pub fn run(config_path: &Path) -> Result<()> {
     let started = Instant::now();
     let mut committed = BTreeMap::new();
     let mut pending = BTreeMap::new();
+    let mut page_was_visible = None;
 
     while running.load(Ordering::SeqCst) {
         let target = match window::find_target_window(&config.tracker) {
@@ -42,6 +44,29 @@ pub fn run(config_path: &Path) -> Result<()> {
         let image = target
             .capture_image()
             .map_err(|err| anyhow!("failed to capture target window: {err}"))?;
+
+        let page_visible = page::evidence_page_visible(&image, &config.evidence);
+        if !page_visible {
+            pending.clear();
+            if page_was_visible != Some(false) {
+                println!(
+                    "[{:>6.2}s] evidence page not visible; waiting",
+                    started.elapsed().as_secs_f32()
+                );
+            }
+            page_was_visible = Some(false);
+            thread::sleep(poll_interval(config.tracker.poll_ms));
+            continue;
+        }
+
+        if page_was_visible == Some(false) {
+            println!(
+                "[{:>6.2}s] evidence page visible",
+                started.elapsed().as_secs_f32()
+            );
+        }
+        page_was_visible = Some(true);
+
         let states = evidence::evaluate(&image, &config.evidence);
 
         if committed.is_empty() {
@@ -63,11 +88,15 @@ pub fn run(config_path: &Path) -> Result<()> {
             );
         }
 
-        thread::sleep(Duration::from_millis(config.tracker.poll_ms.max(50)));
+        thread::sleep(poll_interval(config.tracker.poll_ms));
     }
 
     println!("stopped");
     Ok(())
+}
+
+fn poll_interval(poll_ms: u64) -> Duration {
+    Duration::from_millis(poll_ms.max(1))
 }
 
 fn emit_stable_changes(
