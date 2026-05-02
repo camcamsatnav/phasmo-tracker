@@ -111,6 +111,24 @@ struct FrameSize {
 }
 
 #[derive(Debug, Clone, Copy)]
+struct SnapshotContext<'a> {
+    elapsed_secs: f32,
+    frame_size: FrameSize,
+    ghost_knowledge: &'a GhostKnowledge,
+    states: &'a BTreeMap<String, EvidenceState>,
+    evidence_order: &'a [config::EvidenceConfig],
+}
+
+#[derive(Debug, Clone, Copy)]
+struct EndOfGameContext<'a> {
+    elapsed_secs: f32,
+    output: &'a TrackerOutput,
+    ghost_knowledge: &'a GhostKnowledge,
+    frame_size: FrameSize,
+    evidence_order: &'a [config::EvidenceConfig],
+}
+
+#[derive(Debug, Clone, Copy)]
 struct TrackerOutput {
     mode: OutputMode,
 }
@@ -129,6 +147,7 @@ pub fn run_with_output_mode(
     let config = loaded.config;
     let loaded_ghosts = ghosts::load_or_create(ghosts_path, &config.evidence)?;
     let ghost_knowledge = loaded_ghosts.knowledge;
+    let evidence_order = config.evidence.clone();
 
     if loaded.created {
         output.config_created(config_path);
@@ -180,15 +199,18 @@ pub fn run_with_output_mode(
 
         if let Some(signal) = detect_game_over(&state, &states) {
             handle_end_of_game_actions(
-                elapsed_secs,
                 &mut state,
                 states,
                 signal,
-                &output,
-                &ghost_knowledge,
-                FrameSize {
-                    width: image.width(),
-                    height: image.height(),
+                EndOfGameContext {
+                    elapsed_secs,
+                    output: &output,
+                    ghost_knowledge: &ghost_knowledge,
+                    frame_size: FrameSize {
+                        width: image.width(),
+                        height: image.height(),
+                    },
+                    evidence_order: &evidence_order,
                 },
             );
             thread::sleep(poll_interval(config.tracker.poll_ms));
@@ -197,13 +219,16 @@ pub fn run_with_output_mode(
 
         if state.committed.is_empty() {
             state.committed = states;
-            output.initial_snapshot(
+            output.initial_snapshot(SnapshotContext {
                 elapsed_secs,
-                image.width(),
-                image.height(),
-                &ghost_knowledge,
-                &state.committed,
-            );
+                frame_size: FrameSize {
+                    width: image.width(),
+                    height: image.height(),
+                },
+                ghost_knowledge: &ghost_knowledge,
+                states: &state.committed,
+                evidence_order: &evidence_order,
+            });
         } else {
             emit_stable_changes(
                 elapsed_secs,
@@ -215,6 +240,7 @@ pub fn run_with_output_mode(
                 image.width(),
                 image.height(),
                 &output,
+                &evidence_order,
             );
         }
 
@@ -337,33 +363,19 @@ impl TrackerOutput {
         }
     }
 
-    fn initial_snapshot(
-        &self,
-        elapsed_secs: f32,
-        image_width: u32,
-        image_height: u32,
-        ghost_knowledge: &GhostKnowledge,
-        states: &BTreeMap<String, EvidenceState>,
-    ) {
+    fn initial_snapshot(&self, context: SnapshotContext<'_>) {
         match self.mode {
             OutputMode::Human => {
                 self.print_stdout(format!(
-                    "[{elapsed_secs:>6.2}s] captured {image_width}x{image_height}; initial state: {}",
-                    summarize_states(states)
+                    "[{:>6.2}s] captured {}x{}; initial state: {}",
+                    context.elapsed_secs,
+                    context.frame_size.width,
+                    context.frame_size.height,
+                    summarize_states(context.states, context.evidence_order)
                 ));
-                self.possible_ghosts_summary(elapsed_secs, ghost_knowledge, states);
+                self.possible_ghosts_summary(context);
             }
-            OutputMode::Json => self.snapshot(
-                elapsed_secs,
-                FrameSize {
-                    width: image_width,
-                    height: image_height,
-                },
-                ghost_knowledge,
-                states,
-                SnapshotReason::Initial,
-                Vec::new(),
-            ),
+            OutputMode::Json => self.snapshot(context, SnapshotReason::Initial, Vec::new()),
         }
     }
 
@@ -387,62 +399,25 @@ impl TrackerOutput {
         }
     }
 
-    fn changed_snapshot(
-        &self,
-        elapsed_secs: f32,
-        image_width: u32,
-        image_height: u32,
-        ghost_knowledge: &GhostKnowledge,
-        states: &BTreeMap<String, EvidenceState>,
-        changes: Vec<EvidenceChangeSnapshot>,
-    ) {
+    fn changed_snapshot(&self, context: SnapshotContext<'_>, changes: Vec<EvidenceChangeSnapshot>) {
         match self.mode {
-            OutputMode::Human => {
-                self.possible_ghosts_summary(elapsed_secs, ghost_knowledge, states)
-            }
-            OutputMode::Json => self.snapshot(
-                elapsed_secs,
-                FrameSize {
-                    width: image_width,
-                    height: image_height,
-                },
-                ghost_knowledge,
-                states,
-                SnapshotReason::Change,
-                changes,
-            ),
+            OutputMode::Human => self.possible_ghosts_summary(context),
+            OutputMode::Json => self.snapshot(context, SnapshotReason::Change, changes),
         }
     }
 
-    fn game_over(
-        &self,
-        elapsed_secs: f32,
-        signal: GameOverSignal,
-        image_width: u32,
-        image_height: u32,
-        ghost_knowledge: &GhostKnowledge,
-        states: &BTreeMap<String, EvidenceState>,
-    ) {
+    fn game_over(&self, context: SnapshotContext<'_>, signal: GameOverSignal) {
         match self.mode {
             OutputMode::Human => self.print_stdout(format!(
-                "[{elapsed_secs:>6.2}s] game over detected ({signal}); reset evidence selection"
+                "[{:>6.2}s] game over detected ({signal}); reset evidence selection",
+                context.elapsed_secs
             )),
             OutputMode::Json => {
                 self.emit_json(TrackerEvent::GameOver {
-                    elapsed_secs,
+                    elapsed_secs: context.elapsed_secs,
                     signal: signal.to_string(),
                 });
-                self.snapshot(
-                    elapsed_secs,
-                    FrameSize {
-                        width: image_width,
-                        height: image_height,
-                    },
-                    ghost_knowledge,
-                    states,
-                    SnapshotReason::GameOverReset,
-                    Vec::new(),
-                );
+                self.snapshot(context, SnapshotReason::GameOverReset, Vec::new());
             }
         }
     }
@@ -454,19 +429,22 @@ impl TrackerOutput {
         }
     }
 
-    fn possible_ghosts_summary(
-        &self,
-        elapsed_secs: f32,
-        ghost_knowledge: &GhostKnowledge,
-        states: &BTreeMap<String, EvidenceState>,
-    ) {
-        let selected = evidence_names_with_state(states, EvidenceState::Selected);
+    fn possible_ghosts_summary(&self, context: SnapshotContext<'_>) {
+        let selected = evidence_names_with_state(
+            context.states,
+            EvidenceState::Selected,
+            context.evidence_order,
+        );
         if selected.is_empty() {
             return;
         }
 
-        let rejected = evidence_names_with_state(states, EvidenceState::Rejected);
-        let candidates = possible_ghost_names(ghost_knowledge, states);
+        let rejected = evidence_names_with_state(
+            context.states,
+            EvidenceState::Rejected,
+            context.evidence_order,
+        );
+        let candidates = possible_ghost_names(context.ghost_knowledge, context.states);
         let selected = selected.join(", ");
         let rejected = if rejected.is_empty() {
             "none".to_string()
@@ -480,34 +458,34 @@ impl TrackerOutput {
         };
 
         self.print_stdout(format!(
-            "[{elapsed_secs:>6.2}s] selected evidence: {selected}; rejected evidence: {rejected}; possible ghosts: {candidates}"
+            "[{:>6.2}s] selected evidence: {selected}; rejected evidence: {rejected}; possible ghosts: {candidates}",
+            context.elapsed_secs
         ));
     }
 
     fn snapshot(
         &self,
-        elapsed_secs: f32,
-        frame_size: FrameSize,
-        ghost_knowledge: &GhostKnowledge,
-        states: &BTreeMap<String, EvidenceState>,
+        context: SnapshotContext<'_>,
         reason: SnapshotReason,
         changes: Vec<EvidenceChangeSnapshot>,
     ) {
         self.emit_json(TrackerEvent::Snapshot {
-            elapsed_secs,
+            elapsed_secs: context.elapsed_secs,
             reason,
-            image_width: frame_size.width,
-            image_height: frame_size.height,
-            evidence: states
-                .iter()
-                .map(|(name, state)| EvidenceSnapshot {
-                    name: name.clone(),
-                    state: *state,
-                })
-                .collect(),
-            selected_evidence: evidence_names_with_state(states, EvidenceState::Selected),
-            rejected_evidence: evidence_names_with_state(states, EvidenceState::Rejected),
-            possible_ghosts: possible_ghost_names(ghost_knowledge, states),
+            image_width: context.frame_size.width,
+            image_height: context.frame_size.height,
+            evidence: evidence_snapshot(context.states, context.evidence_order),
+            selected_evidence: evidence_names_with_state(
+                context.states,
+                EvidenceState::Selected,
+                context.evidence_order,
+            ),
+            rejected_evidence: evidence_names_with_state(
+                context.states,
+                EvidenceState::Rejected,
+                context.evidence_order,
+            ),
+            possible_ghosts: possible_ghost_names(context.ghost_knowledge, context.states),
             changes,
         });
     }
@@ -544,22 +522,21 @@ fn detect_game_over(
 }
 
 fn handle_end_of_game_actions(
-    elapsed_secs: f32,
     state: &mut TrackerState,
     current: BTreeMap<String, EvidenceState>,
     signal: GameOverSignal,
-    output: &TrackerOutput,
-    ghost_knowledge: &GhostKnowledge,
-    frame_size: FrameSize,
+    context: EndOfGameContext<'_>,
 ) {
     state.reset_for_next_round(current);
-    output.game_over(
-        elapsed_secs,
+    context.output.game_over(
+        SnapshotContext {
+            elapsed_secs: context.elapsed_secs,
+            frame_size: context.frame_size,
+            ghost_knowledge: context.ghost_knowledge,
+            states: &state.committed,
+            evidence_order: context.evidence_order,
+        },
         signal,
-        frame_size.width,
-        frame_size.height,
-        ghost_knowledge,
-        &state.committed,
     );
 }
 
@@ -586,10 +563,15 @@ fn emit_stable_changes(
     image_width: u32,
     image_height: u32,
     output: &TrackerOutput,
+    evidence_order: &[config::EvidenceConfig],
 ) {
     let mut changes = Vec::new();
 
-    for (name, new_state) in current {
+    for item in evidence_order {
+        let name = item.name.clone();
+        let Some(new_state) = current.get(&name).copied() else {
+            continue;
+        };
         let old_state = committed
             .get(&name)
             .copied()
@@ -621,19 +603,32 @@ fn emit_stable_changes(
 
     if !changes.is_empty() {
         output.changed_snapshot(
-            elapsed_secs,
-            image_width,
-            image_height,
-            ghost_knowledge,
-            committed,
+            SnapshotContext {
+                elapsed_secs,
+                frame_size: FrameSize {
+                    width: image_width,
+                    height: image_height,
+                },
+                ghost_knowledge,
+                states: committed,
+                evidence_order,
+            },
             changes,
         );
     }
 }
 
-fn summarize_states(states: &BTreeMap<String, EvidenceState>) -> String {
-    states
+fn summarize_states(
+    states: &BTreeMap<String, EvidenceState>,
+    evidence_order: &[config::EvidenceConfig],
+) -> String {
+    evidence_order
         .iter()
+        .filter_map(|item| {
+            states
+                .get(&item.name)
+                .map(|state| (item.name.as_str(), state))
+        })
         .map(|(name, state)| format!("{name}={state}"))
         .collect::<Vec<_>>()
         .join(", ")
@@ -642,11 +637,27 @@ fn summarize_states(states: &BTreeMap<String, EvidenceState>) -> String {
 fn evidence_names_with_state(
     states: &BTreeMap<String, EvidenceState>,
     target: EvidenceState,
+    evidence_order: &[config::EvidenceConfig],
 ) -> Vec<String> {
-    states
+    evidence_order
         .iter()
-        .filter(|(_, state)| **state == target)
-        .map(|(name, _)| name.clone())
+        .filter(|item| states.get(&item.name).copied() == Some(target))
+        .map(|item| item.name.clone())
+        .collect()
+}
+
+fn evidence_snapshot(
+    states: &BTreeMap<String, EvidenceState>,
+    evidence_order: &[config::EvidenceConfig],
+) -> Vec<EvidenceSnapshot> {
+    evidence_order
+        .iter()
+        .filter_map(|item| {
+            states.get(&item.name).map(|state| EvidenceSnapshot {
+                name: item.name.clone(),
+                state: *state,
+            })
+        })
         .collect()
 }
 
@@ -733,20 +744,24 @@ mod tests {
         };
         let output = TrackerOutput::new(OutputMode::Human);
         let ghost_knowledge = GhostKnowledge { ghosts: Vec::new() };
+        let evidence_order = evidence_order(&["EMF Level 5", "Ghost Orb"]);
 
         handle_end_of_game_actions(
-            1.0,
             &mut state,
             states(&[
                 ("EMF Level 5", EvidenceState::Clear),
                 ("Ghost Orb", EvidenceState::Clear),
             ]),
             GameOverSignal::JournalReset,
-            &output,
-            &ghost_knowledge,
-            FrameSize {
-                width: 1000,
-                height: 1000,
+            EndOfGameContext {
+                elapsed_secs: 1.0,
+                output: &output,
+                ghost_knowledge: &ghost_knowledge,
+                frame_size: FrameSize {
+                    width: 1000,
+                    height: 1000,
+                },
+                evidence_order: &evidence_order,
             },
         );
 
@@ -755,10 +770,63 @@ mod tests {
         assert!(all_evidence_clear(&state.committed));
     }
 
+    #[test]
+    fn evidence_lists_follow_config_order_not_map_order() {
+        let states = states(&[
+            ("Spirit Box", EvidenceState::Selected),
+            ("EMF Level 5", EvidenceState::Selected),
+            ("Ghost Orb", EvidenceState::Rejected),
+        ]);
+        let evidence_order = evidence_order(&["EMF Level 5", "Ghost Orb", "Spirit Box"]);
+
+        assert_eq!(
+            evidence_names_with_state(&states, EvidenceState::Selected, &evidence_order),
+            vec!["EMF Level 5", "Spirit Box"]
+        );
+        assert_eq!(
+            summarize_states(&states, &evidence_order),
+            "EMF Level 5=selected, Ghost Orb=rejected, Spirit Box=selected"
+        );
+        assert_eq!(
+            evidence_snapshot(&states, &evidence_order)
+                .into_iter()
+                .map(|item| item.name)
+                .collect::<Vec<_>>(),
+            vec!["EMF Level 5", "Ghost Orb", "Spirit Box"]
+        );
+    }
+
     fn states(entries: &[(&str, EvidenceState)]) -> BTreeMap<String, EvidenceState> {
         entries
             .iter()
             .map(|(name, state)| ((*name).to_string(), *state))
             .collect()
+    }
+
+    fn evidence_order(names: &[&str]) -> Vec<config::EvidenceConfig> {
+        names
+            .iter()
+            .map(|name| config::EvidenceConfig {
+                name: (*name).to_string(),
+                selected: region_matcher(),
+                rejected: region_matcher(),
+            })
+            .collect()
+    }
+
+    fn region_matcher() -> config::RegionMatcher {
+        config::RegionMatcher {
+            x_pct: 0.0,
+            y_pct: 0.0,
+            w_pct: 0.1,
+            h_pct: 0.1,
+            color: config::ColorMatcher {
+                r: 0,
+                g: 0,
+                b: 0,
+                tolerance: 0,
+                min_ratio: 0.5,
+            },
+        }
     }
 }
