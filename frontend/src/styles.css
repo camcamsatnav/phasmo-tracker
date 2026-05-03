@@ -289,10 +289,36 @@ h2 {
   background: rgba(246, 240, 223, 0.08);
 }
 
+.ghost-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
 .ghost-name {
+  min-width: 0;
   color: #fff7df;
   font-weight: 800;
   overflow-wrap: anywhere;
+}
+
+.ghost-hunt-meta {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 7px;
+  border: 1px solid rgba(244, 195, 111, 0.44);
+  border-radius: 8px;
+  color: #ffe6aa;
+  background: rgba(105, 68, 24, 0.48);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .ghost-evidence-list {

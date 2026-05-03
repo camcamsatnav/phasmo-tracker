@@ -1,5 +1,6 @@
 import { Ghost } from "lucide-react";
 
+import { ghostHuntMeta } from "../ghostHuntMeta";
 import { EvidenceChip } from "./EvidenceChip";
 
 interface GhostsPanelProps {
@@ -27,9 +28,15 @@ export function GhostsPanel({
         <div className="ghost-grid">
           {possibleGhosts.map((ghost) => {
             const requirements = ghostRequirements[ghost];
+            const huntMeta = ghostHuntMeta(ghost);
             return (
               <div className="ghost-card" key={ghost}>
-                <div className="ghost-name">{ghost}</div>
+                <div className="ghost-name-row">
+                  <div className="ghost-name">{ghost}</div>
+                  <span className="ghost-hunt-meta" title={huntMeta.title}>
+                    {huntMeta.label}
+                  </span>
+                </div>
                 {requirements ? (
                   <div className="ghost-evidence-list" aria-label={`${ghost} evidence`}>
                     {sortRequiredEvidence(

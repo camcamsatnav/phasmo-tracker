@@ -40,6 +40,14 @@ describe("GhostsPanel", () => {
     expect(screen.getByText("Spirit")).toHaveClass("ghost-name");
     expect(screen.getByText("Wraith")).toHaveClass("ghost-name");
     expect(screen.getByText("The Mimic")).toHaveClass("ghost-name");
+    expect(
+      screen.getByTitle("Hunt threshold: 50%; Incense hunt prevention: 180s."),
+    ).toHaveTextContent("50%/180s");
+    expect(
+      screen.getByTitle(
+        "Hunt threshold and abilities inherit from the mimicked ghost; Incense hunt prevention: 90s.",
+      ),
+    ).toHaveTextContent("Varies/90s");
     expect(screen.getAllByTitle("Required evidence: EMF Level 5")[0]).toHaveClass(
       "ghost-evidence-chip",
       "emf",
@@ -84,6 +92,7 @@ describe("GhostsPanel", () => {
     );
 
     expect(screen.getByText("Custom Ghost")).toHaveClass("ghost-name");
+    expect(screen.getByText("?%/?s")).toHaveClass("ghost-hunt-meta");
     expect(screen.getByText("Evidence unknown")).toHaveClass("ghost-evidence-missing");
   });
 });
