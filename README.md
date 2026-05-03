@@ -37,19 +37,19 @@ The Electron frontend starts the same Rust tracker in JSON event mode and shows 
 Install the desktop dependencies once:
 
 ```powershell
-pnpm.cmd install
+pnpm install
 ```
 
 Run the Vite dev server and Electron app together:
 
 ```powershell
-pnpm.cmd run dev
+pnpm run dev
 ```
 
 Build the frontend and open the desktop shell from the production bundle:
 
 ```powershell
-pnpm.cmd run desktop
+pnpm run desktop
 ```
 
 The JSON event stream is also available directly:
@@ -63,7 +63,7 @@ cargo run -- --json
 Build a portable Electron executable that includes the release Rust tracker binary:
 
 ```powershell
-pnpm.cmd run bundle
+pnpm run bundle
 ```
 
 The generated app is written to `release\Phasmo Evidence Tracker-0.1.0-portable.exe`.
