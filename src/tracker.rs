@@ -50,7 +50,7 @@ enum TrackerEvent {
         poll_ms: u64,
         stable_frames: usize,
         evidence: Vec<String>,
-        ghosts: Vec<String>,
+        ghosts: Vec<GhostSnapshot>,
     },
     WindowSearchError {
         message: String,
@@ -95,6 +95,13 @@ enum SnapshotReason {
 struct EvidenceSnapshot {
     name: String,
     state: EvidenceState,
+}
+
+#[derive(Debug, Serialize)]
+struct GhostSnapshot {
+    name: String,
+    evidence: Vec<String>,
+    false_evidence: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -326,7 +333,11 @@ impl TrackerOutput {
                 ghosts: ghost_knowledge
                     .ghosts
                     .iter()
-                    .map(|ghost| ghost.name.clone())
+                    .map(|ghost| GhostSnapshot {
+                        name: ghost.name.clone(),
+                        evidence: ghost.evidence.clone(),
+                        false_evidence: ghost.false_evidence.clone(),
+                    })
                     .collect(),
             }),
         }

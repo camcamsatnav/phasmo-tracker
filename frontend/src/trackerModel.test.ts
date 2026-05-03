@@ -52,6 +52,37 @@ describe("trackerModel", () => {
     expect(state.status).toBe("Tracking evidence page");
   });
 
+  it("stores ghost evidence from tracker startup", () => {
+    const state = applyTrackerEvent(
+      createInitialTrackerViewState(true),
+      {
+        type: "tracker_started",
+        config_path: "phasmo_tracker.toml",
+        ghosts_path: "phasmo_ghosts.toml",
+        app_name_contains: "Phasmophobia",
+        window_title_contains: "Phasmophobia",
+        poll_ms: 10,
+        stable_frames: 1,
+        evidence: ["EMF Level 5", "Ghost Orb"],
+        ghosts: [
+          {
+            name: "The Mimic",
+            evidence: ["Freezing Temperatures", "Spirit Box", "Ultraviolet"],
+            false_evidence: ["Ghost Orb"],
+          },
+        ],
+      },
+      6,
+    );
+
+    expect(state.possibleGhosts).toEqual(["The Mimic"]);
+    expect(state.ghostRequirements["The Mimic"]).toEqual({
+      name: "The Mimic",
+      evidence: ["Freezing Temperatures", "Spirit Box", "Ultraviolet"],
+      false_evidence: ["Ghost Orb"],
+    });
+  });
+
   it("records evidence changes and game-over resets", () => {
     const changed = applyTrackerEvent(
       createInitialTrackerViewState(true),

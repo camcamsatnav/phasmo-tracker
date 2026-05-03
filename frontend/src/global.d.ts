@@ -58,6 +58,12 @@ declare global {
     new_state: EvidenceState;
   }
 
+  interface GhostSnapshot {
+    name: string;
+    evidence: string[];
+    false_evidence: string[];
+  }
+
   type TrackerEvent =
     | { type: "config_created"; path: string }
     | { type: "ghost_data_created"; path: string }
@@ -70,7 +76,7 @@ declare global {
         poll_ms: number;
         stable_frames: number;
         evidence: string[];
-        ghosts: string[];
+        ghosts: GhostSnapshot[];
       }
     | { type: "window_search_error"; message: string }
     | { type: "page_visibility"; elapsed_secs: number; visible: boolean }

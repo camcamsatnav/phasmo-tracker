@@ -27,6 +27,7 @@ export interface TrackerViewState {
   selectedEvidence: string[];
   rejectedEvidence: string[];
   possibleGhosts: string[];
+  ghostRequirements: Record<string, GhostSnapshot>;
   activity: ActivityEntry[];
   elapsedSecs: number | null;
   imageSize: ImageSize | null;
@@ -43,40 +44,58 @@ export const defaultEvidenceNames = [
   "Spirit Box",
 ];
 
-export const defaultGhosts = [
-  "Banshee",
-  "Dayan",
-  "Demon",
-  "Deogen",
-  "Gallu",
-  "Goryo",
-  "Hantu",
-  "Jinn",
-  "Mare",
-  "Moroi",
-  "Myling",
-  "Obake",
-  "Obambo",
-  "Oni",
-  "Onryo",
-  "Phantom",
-  "Poltergeist",
-  "Raiju",
-  "Revenant",
-  "Shade",
-  "Spirit",
-  "Thaye",
-  "The Mimic",
-  "The Twins",
-  "Wraith",
-  "Yokai",
-  "Yurei",
+export const defaultGhosts: GhostSnapshot[] = [
+  ghost("Banshee", ["D.O.T.S Projector", "Ghost Orb", "Ultraviolet"]),
+  ghost("Dayan", ["EMF Level 5", "Ghost Orb", "Spirit Box"]),
+  ghost("Demon", ["Freezing Temperatures", "Ghost Writing", "Ultraviolet"]),
+  ghost("Deogen", ["D.O.T.S Projector", "Ghost Writing", "Spirit Box"]),
+  ghost("Gallu", ["EMF Level 5", "Spirit Box", "Ultraviolet"]),
+  ghost("Goryo", ["D.O.T.S Projector", "EMF Level 5", "Ultraviolet"]),
+  ghost("Hantu", ["Freezing Temperatures", "Ghost Orb", "Ultraviolet"]),
+  ghost("Jinn", ["EMF Level 5", "Freezing Temperatures", "Ultraviolet"]),
+  ghost("Mare", ["Ghost Orb", "Ghost Writing", "Spirit Box"]),
+  ghost("Moroi", ["Freezing Temperatures", "Ghost Writing", "Spirit Box"]),
+  ghost("Myling", ["EMF Level 5", "Ghost Writing", "Ultraviolet"]),
+  ghost("Obake", ["EMF Level 5", "Ghost Orb", "Ultraviolet"]),
+  ghost("Obambo", ["D.O.T.S Projector", "Ghost Writing", "Ultraviolet"]),
+  ghost("Oni", ["D.O.T.S Projector", "EMF Level 5", "Freezing Temperatures"]),
+  ghost("Onryo", ["Freezing Temperatures", "Ghost Orb", "Spirit Box"]),
+  ghost("Phantom", ["D.O.T.S Projector", "Spirit Box", "Ultraviolet"]),
+  ghost("Poltergeist", ["Ghost Writing", "Spirit Box", "Ultraviolet"]),
+  ghost("Raiju", ["D.O.T.S Projector", "EMF Level 5", "Ghost Orb"]),
+  ghost("Revenant", ["Freezing Temperatures", "Ghost Orb", "Ghost Writing"]),
+  ghost("Shade", ["D.O.T.S Projector", "Freezing Temperatures", "Ghost Writing"]),
+  ghost("Spirit", ["EMF Level 5", "Ghost Writing", "Spirit Box"]),
+  ghost("Thaye", ["D.O.T.S Projector", "Ghost Orb", "Ghost Writing"]),
+  ghost("The Mimic", ["Freezing Temperatures", "Spirit Box", "Ultraviolet"], [
+    "Ghost Orb",
+  ]),
+  ghost("The Twins", ["EMF Level 5", "Freezing Temperatures", "Spirit Box"]),
+  ghost("Wraith", ["D.O.T.S Projector", "EMF Level 5", "Spirit Box"]),
+  ghost("Yokai", ["D.O.T.S Projector", "Ghost Orb", "Spirit Box"]),
+  ghost("Yurei", ["D.O.T.S Projector", "Freezing Temperatures", "Ghost Orb"]),
 ];
 
 const maxActivityEntries = 8;
 
+function ghost(
+  name: string,
+  evidence: string[],
+  false_evidence: string[] = [],
+): GhostSnapshot {
+  return { name, evidence, false_evidence };
+}
+
+function ghostRequirementsByName(ghosts: GhostSnapshot[]): Record<string, GhostSnapshot> {
+  return Object.fromEntries(ghosts.map((ghost) => [ghost.name, ghost]));
+}
+
 export function initialEvidence(): EvidenceItemSnapshot[] {
   return defaultEvidenceNames.map((name) => ({ name, state: "clear" }));
+}
+
+export function defaultGhostNames(): string[] {
+  return defaultGhosts.map((ghost) => ghost.name);
 }
 
 export function createInitialTrackerViewState(hasBridge: boolean): TrackerViewState {
@@ -86,7 +105,8 @@ export function createInitialTrackerViewState(hasBridge: boolean): TrackerViewSt
     evidence: initialEvidence(),
     selectedEvidence: [],
     rejectedEvidence: [],
-    possibleGhosts: defaultGhosts,
+    possibleGhosts: defaultGhostNames(),
+    ghostRequirements: ghostRequirementsByName(defaultGhosts),
     activity: [],
     elapsedSecs: null,
     imageSize: null,
@@ -129,7 +149,8 @@ export function applyTrackerEvent(
           evidence: event.evidence.map((name) => ({ name, state: "clear" })),
           selectedEvidence: [],
           rejectedEvidence: [],
-          possibleGhosts: event.ghosts,
+          possibleGhosts: event.ghosts.map((ghost) => ghost.name),
+          ghostRequirements: ghostRequirementsByName(event.ghosts),
           status: "Looking for Phasmophobia",
           imageSize: null,
           lastChange: "None yet",

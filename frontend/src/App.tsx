@@ -96,7 +96,11 @@ export function App() {
 
       <main className="dashboard-grid">
         <EvidencePanel evidence={state.evidence} />
-        <GhostsPanel possibleGhosts={state.possibleGhosts} />
+        <GhostsPanel
+          ghostRequirements={state.ghostRequirements}
+          possibleGhosts={state.possibleGhosts}
+          selectedEvidence={state.selectedEvidence}
+        />
 
         <aside className="side-stack" aria-label="Tracker details">
           <SummaryPanel

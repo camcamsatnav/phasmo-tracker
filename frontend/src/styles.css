@@ -275,21 +275,121 @@ h2 {
 
 .ghost-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(174px, 1fr));
   gap: 10px;
 }
 
-.ghost-chip {
-  display: flex;
-  align-items: center;
-  min-height: 46px;
+.ghost-card {
+  display: grid;
+  gap: 10px;
+  min-height: 82px;
   padding: 10px 12px;
   border: 1px solid rgba(133, 210, 189, 0.26);
   border-radius: 8px;
   background: rgba(246, 240, 223, 0.08);
+}
+
+.ghost-name {
   color: #fff7df;
   font-weight: 800;
   overflow-wrap: anywhere;
+}
+
+.ghost-evidence-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ghost-evidence-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  max-width: 100%;
+  padding: 4px 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ghost-evidence-chip.selected-evidence {
+  opacity: 0.48;
+  filter: saturate(0.72);
+}
+
+.ghost-evidence-chip.missing-evidence {
+  box-shadow: 0 0 0 1px rgba(255, 248, 215, 0.10);
+}
+
+.ghost-evidence-chip svg {
+  flex: 0 0 auto;
+}
+
+.ghost-evidence-chip.emf {
+  color: #fff2b8;
+  border-color: rgba(245, 201, 77, 0.46);
+  background: rgba(126, 94, 20, 0.52);
+}
+
+.ghost-evidence-chip.dots {
+  color: #bff8ef;
+  border-color: rgba(66, 215, 194, 0.42);
+  background: rgba(19, 95, 91, 0.55);
+}
+
+.ghost-evidence-chip.ultraviolet {
+  color: #ead9ff;
+  border-color: rgba(177, 123, 245, 0.48);
+  background: rgba(85, 52, 135, 0.54);
+}
+
+.ghost-evidence-chip.freezing {
+  color: #d8f4ff;
+  border-color: rgba(111, 205, 239, 0.46);
+  background: rgba(35, 88, 112, 0.58);
+}
+
+.ghost-evidence-chip.orb {
+  color: #dff8d0;
+  border-color: rgba(140, 215, 105, 0.46);
+  background: rgba(55, 99, 42, 0.58);
+}
+
+.ghost-evidence-chip.writing {
+  color: #ffe0c6;
+  border-color: rgba(237, 142, 72, 0.48);
+  background: rgba(115, 62, 31, 0.56);
+}
+
+.ghost-evidence-chip.spirit-box {
+  color: #ffd9df;
+  border-color: rgba(238, 105, 128, 0.46);
+  background: rgba(120, 45, 62, 0.56);
+}
+
+.ghost-evidence-chip.unknown {
+  color: #ece2c6;
+  border-color: rgba(236, 226, 198, 0.32);
+  background: rgba(236, 226, 198, 0.14);
+}
+
+.ghost-evidence-chip.false-evidence {
+  border-style: dashed;
+  opacity: 0.68;
+}
+
+.ghost-evidence-chip.false-evidence.selected-evidence {
+  opacity: 0.42;
+}
+
+.ghost-evidence-missing {
+  color: #d8cda9;
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .empty-state {
