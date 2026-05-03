@@ -106,3 +106,297 @@ evidence = ["D.O.T.S Projector", "Ghost Orb", "Spirit Box"]
 [[ghosts]]
 name = "Yurei"
 evidence = ["D.O.T.S Projector", "Freezing Temperatures", "Ghost Orb"]
+
+[[traits]]
+id = "banshee_scream"
+label = "Banshee scream recorded"
+description = "Unique scream heard on Parabolic Microphone or Sound Recorder."
+possible_ghosts = ["Banshee"]
+
+[[traits]]
+id = "banshee_ignores_non_target"
+label = "Ignores non-target in hunt"
+description = "During a hunt, the ghost passes through or ignores one player while its target is inside."
+possible_ghosts = ["Banshee"]
+
+[[traits]]
+id = "female_only_ghost"
+label = "Female-only model/name"
+description = "The ghost has a female model/name; this keeps female-only ghosts in consideration."
+possible_ghosts = ["Banshee", "Dayan"]
+
+[[traits]]
+id = "dayan_movement_speed_change"
+label = "Walking speed: moving/still player changes speed"
+description = "Within 10m, a moving player makes it fast and a still player makes it slow."
+possible_ghosts = ["Dayan"]
+
+[[traits]]
+id = "demon_hunts_before_90s_incense"
+label = "Hunts before 90s after incense"
+description = "The ghost starts a normal hunt less than 90 seconds after incense."
+possible_ghosts = ["Demon"]
+
+[[traits]]
+id = "demon_crucifix_extra_range"
+label = "Crucifix burned from extra range"
+description = "A crucifix prevents a hunt from farther away than normal."
+possible_ghosts = ["Demon"]
+
+[[traits]]
+id = "deogen_finds_and_slows_near_player"
+label = "Walking speed: fast far, crawl slow close"
+description = "The ghost always finds players, is fast at distance, then becomes extremely slow close up."
+possible_ghosts = ["Deogen"]
+
+[[traits]]
+id = "gallu_salt_enrage"
+label = "Walking speed: salt/incense enrage"
+description = "Salt, incense, or crucifix behavior appears to push the ghost into a faster enraged state."
+possible_ghosts = ["Gallu"]
+
+[[traits]]
+id = "gallu_refuses_salt_while_enraged"
+label = "Salt not disturbed while enraged"
+description = "The ghost can cross salt without disturbing it after entering an enraged state."
+possible_ghosts = ["Gallu", "Wraith"]
+
+[[traits]]
+id = "goryo_camera_only_dots"
+label = "D.O.T.S only visible on camera"
+description = "D.O.T.S silhouette is visible through a video camera but not with the naked eye."
+possible_ghosts = ["Goryo"]
+
+[[traits]]
+id = "dots_seen_without_camera"
+label = "D.O.T.S seen without camera"
+description = "D.O.T.S silhouette was visible directly without a video camera."
+excluded_ghosts = ["Goryo"]
+
+[[traits]]
+id = "hantu_temperature_speed"
+label = "Walking speed: cold fast, warm slow"
+description = "The ghost is faster in cold rooms, slower in warm rooms, and has no line-of-sight acceleration."
+possible_ghosts = ["Hantu"]
+
+[[traits]]
+id = "hantu_freezing_breath_hunt"
+label = "Freezing breath during hunt"
+description = "The ghost shows freezing breath during a hunt when the breaker is off."
+possible_ghosts = ["Hantu"]
+
+[[traits]]
+id = "jinn_breaker_off"
+label = "Breaker manually turned off"
+description = "The ghost directly turned the fuse box off rather than overloading it."
+excluded_ghosts = ["Jinn"]
+
+[[traits]]
+id = "jinn_breaker_emf_sanity_zap"
+label = "Breaker EMF after sanity zap"
+description = "A sudden sanity drain produces EMF at the breaker while the fuse box is on."
+possible_ghosts = ["Jinn"]
+
+[[traits]]
+id = "jinn_los_breaker_speed"
+label = "Walking speed: breaker-on LOS burst"
+description = "With the fuse box on, the ghost speeds to about 2.5m/s with line of sight from distance."
+possible_ghosts = ["Jinn"]
+
+[[traits]]
+id = "mare_instant_light_off"
+label = "Light instantly turned back off"
+description = "A light switch is turned off within about one second after a player turns it on."
+possible_ghosts = ["Mare"]
+
+[[traits]]
+id = "ghost_turned_light_on"
+label = "Ghost turned light on"
+description = "The ghost directly turned on a light switch."
+excluded_ghosts = ["Mare"]
+
+[[traits]]
+id = "moroi_speed_changes_with_sanity"
+label = "Walking speed: changes with sanity"
+description = "Roaming speed changes as average sanity changes, including after sanity medication."
+possible_ghosts = ["Moroi"]
+
+[[traits]]
+id = "moroi_longer_incense_blind"
+label = "Incense blind lasted longer"
+description = "Incense blinds the ghost for longer than normal during a hunt."
+possible_ghosts = ["Moroi"]
+
+[[traits]]
+id = "myling_quiet_footsteps"
+label = "Quiet hunt footsteps"
+description = "Footsteps and vocalization are only audible close to the ghost, near electronics interference range."
+possible_ghosts = ["Myling"]
+
+[[traits]]
+id = "obake_unique_uv_print"
+label = "Unique UV print"
+description = "Six-finger handprint, two light-switch fingerprints, or other unique Obake UV pattern."
+possible_ghosts = ["Obake"]
+
+[[traits]]
+id = "obake_shapeshift_hunt"
+label = "Shapeshift during hunt"
+description = "The ghost briefly changes model while blinking during a hunt."
+possible_ghosts = ["Obake"]
+
+[[traits]]
+id = "obambo_phase_speed_change"
+label = "Walking speed: calm/aggressive phases"
+description = "The ghost snaps between slower calm and faster aggressive movement, sometimes mid-hunt."
+possible_ghosts = ["Obambo"]
+
+[[traits]]
+id = "obambo_fast_short_hunt"
+label = "Fast hunt ended 20% early"
+description = "A hunt that began fast lasted about 20% less than expected."
+possible_ghosts = ["Obambo"]
+
+[[traits]]
+id = "oni_visible_longer_hunt"
+label = "More visible during hunt"
+description = "The ghost flickers less invisibly and remains visible longer during hunts."
+possible_ghosts = ["Oni"]
+
+[[traits]]
+id = "mist_airball_event"
+label = "Mist airball event happened"
+description = "A mist-form ghost event happened, which rules out Oni."
+excluded_ghosts = ["Oni"]
+
+[[traits]]
+id = "onryo_flame_prevented_hunt"
+label = "Flame prevented hunt"
+description = "A nearby lit flame is blown out instead of the ghost hunting or burning a crucifix."
+possible_ghosts = ["Onryo"]
+
+[[traits]]
+id = "onryo_hunt_after_flame_blowout"
+label = "Hunt after flame blowout"
+description = "The ghost hunts soon after extinguishing a flame near it."
+possible_ghosts = ["Onryo"]
+
+[[traits]]
+id = "phantom_photo_disappears"
+label = "Ghost vanished from photo"
+description = "A ghost photo makes the ghost disappear or the photo lacks the visible ghost/interference."
+possible_ghosts = ["Phantom"]
+
+[[traits]]
+id = "phantom_long_invisible_blinks"
+label = "Long invisible hunt blinks"
+description = "The ghost is invisible for longer than normal between hunt blinks."
+possible_ghosts = ["Phantom"]
+
+[[traits]]
+id = "poltergeist_multi_throw"
+label = "Multiple objects thrown"
+description = "Several objects are thrown at once, or an object is thrown with unusual force."
+possible_ghosts = ["Poltergeist"]
+
+[[traits]]
+id = "raiju_electronics_speed"
+label = "Walking speed: fast near electronics"
+description = "The ghost becomes about 2.5m/s near active electronic equipment."
+possible_ghosts = ["Raiju"]
+
+[[traits]]
+id = "raiju_long_electronic_disruption"
+label = "Electronics disrupted at long range"
+description = "Electronics disrupt from farther away than normal during a hunt."
+possible_ghosts = ["Raiju"]
+
+[[traits]]
+id = "revenant_slow_hidden_fast_detected"
+label = "Walking speed: slow hidden, fast detected"
+description = "The ghost is very slow when nobody is detected, then rushes quickly after detecting a player."
+possible_ghosts = ["Revenant"]
+
+[[traits]]
+id = "shade_no_same_room_activity"
+label = "No activity with player in room"
+description = "The ghost refuses interactions, events, and hunts while a player is in its room."
+possible_ghosts = ["Shade"]
+
+[[traits]]
+id = "same_room_activity_seen"
+label = "Activity with player in room"
+description = "The ghost interacted, evented, or hunted while a player was in its current room."
+excluded_ghosts = ["Shade"]
+
+[[traits]]
+id = "spirit_no_hunt_180s_incense"
+label = "No hunt for 180s after incense"
+description = "Incense prevents normal hunts for about 180 seconds."
+possible_ghosts = ["Spirit"]
+
+[[traits]]
+id = "hunted_before_180s_after_incense"
+label = "Hunted before 180s after incense"
+description = "The ghost started a normal hunt before a Spirit-length incense timer expired."
+excluded_ghosts = ["Spirit"]
+
+[[traits]]
+id = "thaye_fast_then_ages_slow"
+label = "Walking speed: starts fast, ages slow"
+description = "The ghost starts very fast and becomes slower/less active as time is spent near it."
+possible_ghosts = ["Thaye"]
+
+[[traits]]
+id = "twins_back_to_back_interactions"
+label = "Back-to-back interactions under 2s"
+description = "Two separate interactions happen with less than two seconds between them."
+possible_ghosts = ["The Twins"]
+
+[[traits]]
+id = "twins_two_base_speeds"
+label = "Walking speed: two base speeds"
+description = "Hunts alternate between a slightly slow and slightly fast base speed."
+possible_ghosts = ["The Twins"]
+
+[[traits]]
+id = "mimic_ghost_orbs"
+label = "Ghost Orbs as false evidence"
+description = "Ghost Orbs appear in addition to the ghost's real evidence set."
+possible_ghosts = ["The Mimic"]
+
+[[traits]]
+id = "mimic_behavior_changes"
+label = "Trait changes between hunts"
+description = "The ghost shows different ghost-specific behaviors across hunts or over time."
+possible_ghosts = ["The Mimic"]
+
+[[traits]]
+id = "wraith_does_not_disturb_salt"
+label = "Salt not disturbed when crossed"
+description = "The ghost crosses a salt line or pile without disturbing it."
+possible_ghosts = ["Wraith", "Gallu"]
+
+[[traits]]
+id = "yokai_short_hearing_range"
+label = "Short voice/electronics detection"
+description = "During a hunt, voice or held electronics only attract the ghost at very close range."
+possible_ghosts = ["Yokai"]
+
+[[traits]]
+id = "yokai_talking_early_hunt"
+label = "Talking caused early hunt"
+description = "The ghost hunts around high sanity while players are talking near it."
+possible_ghosts = ["Yokai"]
+
+[[traits]]
+id = "yurei_full_door_close"
+label = "Full smooth door close"
+description = "A door fully closes smoothly without creaking outside a hunt or ghost event."
+possible_ghosts = ["Yurei"]
+
+[[traits]]
+id = "yurei_left_room_after_incense"
+label = "Left room after incense"
+description = "The ghost leaves its room within 90 seconds after being incensed there."
+excluded_ghosts = ["Yurei"]

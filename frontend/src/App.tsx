@@ -4,13 +4,17 @@ import { AppHeader } from "./components/AppHeader";
 import { EvidencePanel } from "./components/EvidencePanel";
 import { GhostsPanel } from "./components/GhostsPanel";
 import { ActivityPanel, SummaryPanel, TelemetryPanel } from "./components/TrackerDetails";
+import { UnofficialTraitsPanel } from "./components/UnofficialTraitsPanel";
 import {
   addActivity,
   applyTrackerEvent,
   applyTrackerLogEntry,
   applyTrackerProcessStatus,
   createInitialTrackerViewState,
+  filterGhostsByTraits,
   groupEvidenceByState,
+  relevantTraitsForGhosts,
+  toggleSelectedTrait,
 } from "./trackerModel";
 
 export function App() {
@@ -26,6 +30,24 @@ export function App() {
   const evidenceByState = useMemo(
     () => groupEvidenceByState(state.evidence),
     [state.evidence],
+  );
+  const possibleGhosts = useMemo(
+    () =>
+      filterGhostsByTraits(
+        state.possibleGhosts,
+        state.unofficialTraits,
+        state.selectedTraitIds,
+      ),
+    [state.possibleGhosts, state.selectedTraitIds, state.unofficialTraits],
+  );
+  const relevantTraits = useMemo(
+    () =>
+      relevantTraitsForGhosts(
+        state.unofficialTraits,
+        possibleGhosts,
+        state.selectedTraitIds,
+      ),
+    [possibleGhosts, state.selectedTraitIds, state.unofficialTraits],
   );
 
   useEffect(() => {
@@ -84,6 +106,10 @@ export function App() {
     window.tracker?.stop();
   }, []);
 
+  const toggleTrait = useCallback((traitId: string) => {
+    setState((current) => toggleSelectedTrait(current, traitId));
+  }, []);
+
   return (
     <div className="app-shell">
       <AppHeader
@@ -95,10 +121,17 @@ export function App() {
       />
 
       <main className="dashboard-grid">
-        <EvidencePanel evidence={state.evidence} />
+        <div className="left-stack">
+          <EvidencePanel evidence={state.evidence} />
+          <UnofficialTraitsPanel
+            onToggleTrait={toggleTrait}
+            selectedTraitIds={state.selectedTraitIds}
+            traits={relevantTraits}
+          />
+        </div>
         <GhostsPanel
           ghostRequirements={state.ghostRequirements}
-          possibleGhosts={state.possibleGhosts}
+          possibleGhosts={possibleGhosts}
           selectedEvidence={state.selectedEvidence}
         />
 

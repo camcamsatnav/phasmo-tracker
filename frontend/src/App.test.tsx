@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "./App";
@@ -63,5 +63,18 @@ describe("App", () => {
     expect(screen.getByText("Spirit")).toBeTruthy();
     expect(screen.getByText("Wraith")).toBeTruthy();
     expect(screen.getByText("1280x720")).toBeTruthy();
+    expect(
+      screen.queryByRole("checkbox", { name: /Banshee scream recorded/ }),
+    ).toBeNull();
+    expect(
+      screen.getByRole("checkbox", { name: /Salt not disturbed when crossed/ }),
+    ).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /Salt not disturbed when crossed/ }),
+    );
+
+    expect(screen.queryByText("Spirit")).toBeNull();
+    expect(screen.getByText("Wraith")).toBeTruthy();
   });
 });

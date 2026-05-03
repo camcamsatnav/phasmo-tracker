@@ -37,6 +37,7 @@ cargo run -- --config my-tracker.toml
 - `rejected` wins over `selected` if both matchers fire. This is intentional because Phasmophobia draws the rejection strikethrough through the checkbox, so a rejected row can also trip the selected ink region.
 - The polling cadence is intentionally aggressive for quick journal interactions: `poll_ms = 10`, `stable_frames = 1`. Effective speed is still limited by window capture time.
 - End-of-game handling is centralized in `handle_end_of_game_actions` in `src/tracker.rs`. The current signal treats an active round as over when the Evidence page was hidden after activity and later reappears fully clear; reset evidence selections there so future end-of-game actions can extend the same function. Possible ghosts are derived from evidence and do not need separate stored state.
+- Unofficial ghost traits live alongside evidence knowledge in `phasmo_ghosts.toml` as `[[traits]]` entries. Each trait has an `id`, `label`, optional `description`, and either `possible_ghosts` or `excluded_ghosts`. The Rust tracker validates and streams those definitions on startup, and older ghost files with no traits are migrated with the bundled defaults. The frontend stores checked trait ids locally and filters the evidence-derived possible ghost list in `filterGhostsByTraits`. Keep future trait UI/results work on that path so traits remain easy to edit without adding chips to ghost cards.
 
 ## Module Map
 
@@ -46,7 +47,7 @@ cargo run -- --config my-tracker.toml
 - `src/window.rs`: Phasmophobia window discovery using `xcap`.
 - `src/page.rs`: Evidence-page visibility gate. Requires journal paper, Evidence-page title/prompt markers, evidence checkbox column, and right-side ghost-name grid.
 - `src/evidence.rs`: Evidence-state classification from configured selected/rejected regions.
-- `src/ghosts.rs`: Ghost evidence knowledge loading, default ghost data, and candidate filtering.
+- `src/ghosts.rs`: Ghost evidence and unofficial trait knowledge loading, default ghost data, and candidate filtering.
 - `src/tracker.rs`: Main loop, window capture, page gating, state transition logging, end-of-game reset handling, Ctrl-C handling.
 
 ## Verification

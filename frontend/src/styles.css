@@ -175,6 +175,11 @@ h2 {
   gap: 18px;
 }
 
+.left-stack {
+  display: grid;
+  gap: 18px;
+}
+
 .panel-heading {
   display: flex;
   align-items: center;
@@ -271,6 +276,81 @@ h2 {
 .evidence-row.unknown {
   border-color: rgba(147, 111, 42, 0.36);
   background: #f7edcf;
+}
+
+.trait-list {
+  display: grid;
+  gap: 10px;
+  max-height: 420px;
+  overflow: auto;
+}
+
+.trait-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 86px;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 8px 10px;
+  border: 1px solid rgba(29, 25, 18, 0.12);
+  border-radius: 8px;
+  background: #fff8e7;
+  cursor: pointer;
+}
+
+.trait-row.selected {
+  border-color: rgba(41, 137, 111, 0.45);
+  background: #dff6eb;
+}
+
+.trait-row.selected .trait-icon {
+  color: #0f5b47;
+  background: #bfeeda;
+}
+
+.trait-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(38, 32, 22, 0.08);
+}
+
+.trait-row input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #1c8065;
+}
+
+.trait-copy {
+  min-width: 0;
+}
+
+.trait-label {
+  color: #211d16;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.trait-state {
+  justify-self: end;
+  color: #6a5c45;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.trait-empty {
+  display: grid;
+  min-height: 52px;
+  place-items: center;
+  border: 1px dashed rgba(29, 25, 18, 0.18);
+  border-radius: 8px;
+  color: #6a5c45;
+  font-size: 0.86rem;
+  font-weight: 800;
 }
 
 .ghost-grid {

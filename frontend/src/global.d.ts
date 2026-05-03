@@ -64,6 +64,14 @@ declare global {
     false_evidence: string[];
   }
 
+  interface GhostTraitSnapshot {
+    id: string;
+    label: string;
+    description: string;
+    possible_ghosts: string[];
+    excluded_ghosts: string[];
+  }
+
   type TrackerEvent =
     | { type: "config_created"; path: string }
     | { type: "ghost_data_created"; path: string }
@@ -77,6 +85,7 @@ declare global {
         stable_frames: number;
         evidence: string[];
         ghosts: GhostSnapshot[];
+        traits?: GhostTraitSnapshot[];
       }
     | { type: "window_search_error"; message: string }
     | { type: "page_visibility"; elapsed_secs: number; visible: boolean }

@@ -51,6 +51,7 @@ enum TrackerEvent {
         stable_frames: usize,
         evidence: Vec<String>,
         ghosts: Vec<GhostSnapshot>,
+        traits: Vec<GhostTraitSnapshot>,
     },
     WindowSearchError {
         message: String,
@@ -102,6 +103,15 @@ struct GhostSnapshot {
     name: String,
     evidence: Vec<String>,
     false_evidence: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+struct GhostTraitSnapshot {
+    id: String,
+    label: String,
+    description: String,
+    possible_ghosts: Vec<String>,
+    excluded_ghosts: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -337,6 +347,17 @@ impl TrackerOutput {
                         name: ghost.name.clone(),
                         evidence: ghost.evidence.clone(),
                         false_evidence: ghost.false_evidence.clone(),
+                    })
+                    .collect(),
+                traits: ghost_knowledge
+                    .traits
+                    .iter()
+                    .map(|trait_config| GhostTraitSnapshot {
+                        id: trait_config.id.clone(),
+                        label: trait_config.label.clone(),
+                        description: trait_config.description.clone(),
+                        possible_ghosts: trait_config.possible_ghosts.clone(),
+                        excluded_ghosts: trait_config.excluded_ghosts.clone(),
                     })
                     .collect(),
             }),
@@ -754,7 +775,10 @@ mod tests {
             evidence_page_hidden_after_activity: true,
         };
         let output = TrackerOutput::new(OutputMode::Human);
-        let ghost_knowledge = GhostKnowledge { ghosts: Vec::new() };
+        let ghost_knowledge = GhostKnowledge {
+            ghosts: Vec::new(),
+            traits: Vec::new(),
+        };
         let evidence_order = evidence_order(&["EMF Level 5", "Ghost Orb"]);
 
         handle_end_of_game_actions(
