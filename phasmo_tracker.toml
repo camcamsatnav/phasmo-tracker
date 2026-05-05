@@ -8,10 +8,10 @@ stable_frames = 1
 name = "EMF Level 5"
 
 [evidence.selected]
-x_pct = 0.286
-y_pct = 0.279
-w_pct = 0.007
-h_pct = 0.014
+x_pct = 0.122
+y_pct = 0.21
+w_pct = 0.012
+h_pct = 0.023
 
 [evidence.selected.color]
 r = 10
@@ -21,10 +21,10 @@ tolerance = 55
 min_ratio = 0.08
 
 [evidence.rejected]
-x_pct = 0.285
-y_pct = 0.287
-w_pct = 0.115
-h_pct = 0.005
+x_pct = 0.12
+y_pct = 0.223
+w_pct = 0.27
+h_pct = 0.006
 
 [evidence.rejected.color]
 r = 10
@@ -37,10 +37,10 @@ min_ratio = 0.12
 name = "D.O.T.S Projector"
 
 [evidence.selected]
-x_pct = 0.286
-y_pct = 0.3508
-w_pct = 0.007
-h_pct = 0.014
+x_pct = 0.122
+y_pct = 0.3052
+w_pct = 0.012
+h_pct = 0.023
 
 [evidence.selected.color]
 r = 10
@@ -50,10 +50,10 @@ tolerance = 55
 min_ratio = 0.08
 
 [evidence.rejected]
-x_pct = 0.285
-y_pct = 0.3588
-w_pct = 0.115
-h_pct = 0.005
+x_pct = 0.12
+y_pct = 0.3182
+w_pct = 0.27
+h_pct = 0.006
 
 [evidence.rejected.color]
 r = 10
@@ -66,10 +66,10 @@ min_ratio = 0.12
 name = "Ultraviolet"
 
 [evidence.selected]
-x_pct = 0.286
-y_pct = 0.4226
-w_pct = 0.007
-h_pct = 0.014
+x_pct = 0.122
+y_pct = 0.4004
+w_pct = 0.012
+h_pct = 0.023
 
 [evidence.selected.color]
 r = 10
@@ -79,10 +79,10 @@ tolerance = 55
 min_ratio = 0.08
 
 [evidence.rejected]
-x_pct = 0.285
-y_pct = 0.4306
-w_pct = 0.115
-h_pct = 0.005
+x_pct = 0.12
+y_pct = 0.4134
+w_pct = 0.27
+h_pct = 0.006
 
 [evidence.rejected.color]
 r = 10
@@ -95,10 +95,10 @@ min_ratio = 0.12
 name = "Freezing Temperatures"
 
 [evidence.selected]
-x_pct = 0.286
-y_pct = 0.4944
-w_pct = 0.007
-h_pct = 0.014
+x_pct = 0.122
+y_pct = 0.4956
+w_pct = 0.012
+h_pct = 0.023
 
 [evidence.selected.color]
 r = 10
@@ -108,10 +108,10 @@ tolerance = 55
 min_ratio = 0.08
 
 [evidence.rejected]
-x_pct = 0.285
-y_pct = 0.5024
-w_pct = 0.115
-h_pct = 0.005
+x_pct = 0.12
+y_pct = 0.5086
+w_pct = 0.27
+h_pct = 0.006
 
 [evidence.rejected.color]
 r = 10
@@ -124,10 +124,10 @@ min_ratio = 0.12
 name = "Ghost Orb"
 
 [evidence.selected]
-x_pct = 0.286
-y_pct = 0.5662
-w_pct = 0.007
-h_pct = 0.014
+x_pct = 0.122
+y_pct = 0.5908
+w_pct = 0.012
+h_pct = 0.023
 
 [evidence.selected.color]
 r = 10
@@ -137,10 +137,10 @@ tolerance = 55
 min_ratio = 0.08
 
 [evidence.rejected]
-x_pct = 0.285
-y_pct = 0.5742
-w_pct = 0.115
-h_pct = 0.005
+x_pct = 0.12
+y_pct = 0.6038
+w_pct = 0.27
+h_pct = 0.006
 
 [evidence.rejected.color]
 r = 10
@@ -153,10 +153,10 @@ min_ratio = 0.12
 name = "Ghost Writing"
 
 [evidence.selected]
-x_pct = 0.286
-y_pct = 0.638
-w_pct = 0.007
-h_pct = 0.014
+x_pct = 0.122
+y_pct = 0.686
+w_pct = 0.012
+h_pct = 0.023
 
 [evidence.selected.color]
 r = 10
@@ -166,10 +166,10 @@ tolerance = 55
 min_ratio = 0.08
 
 [evidence.rejected]
-x_pct = 0.285
-y_pct = 0.646
-w_pct = 0.115
-h_pct = 0.005
+x_pct = 0.12
+y_pct = 0.699
+w_pct = 0.27
+h_pct = 0.006
 
 [evidence.rejected.color]
 r = 10
@@ -182,10 +182,10 @@ min_ratio = 0.12
 name = "Spirit Box"
 
 [evidence.selected]
-x_pct = 0.286
-y_pct = 0.7098
-w_pct = 0.007
-h_pct = 0.014
+x_pct = 0.122
+y_pct = 0.7812
+w_pct = 0.012
+h_pct = 0.023
 
 [evidence.selected.color]
 r = 10
@@ -195,10 +195,10 @@ tolerance = 55
 min_ratio = 0.08
 
 [evidence.rejected]
-x_pct = 0.285
-y_pct = 0.7178
-w_pct = 0.115
-h_pct = 0.005
+x_pct = 0.12
+y_pct = 0.7942
+w_pct = 0.27
+h_pct = 0.006
 
 [evidence.rejected.color]
 r = 10

@@ -52,15 +52,15 @@ pub struct ColorMatcher {
     pub min_ratio: f64,
 }
 
-const EVIDENCE_SELECTED_X_PCT: f64 = 0.286;
-const EVIDENCE_SELECTED_START_Y_PCT: f64 = 0.279;
-const EVIDENCE_ROW_STEP_PCT: f64 = 0.0718;
-const EVIDENCE_SELECTED_W_PCT: f64 = 0.007;
-const EVIDENCE_SELECTED_H_PCT: f64 = 0.014;
-const EVIDENCE_REJECTED_X_PCT: f64 = 0.285;
-const EVIDENCE_REJECTED_Y_OFFSET_PCT: f64 = 0.008;
-const EVIDENCE_REJECTED_W_PCT: f64 = 0.115;
-const EVIDENCE_REJECTED_H_PCT: f64 = 0.005;
+const EVIDENCE_SELECTED_X_PCT: f64 = 0.122;
+const EVIDENCE_SELECTED_START_Y_PCT: f64 = 0.210;
+const EVIDENCE_ROW_STEP_PCT: f64 = 0.0952;
+const EVIDENCE_SELECTED_W_PCT: f64 = 0.012;
+const EVIDENCE_SELECTED_H_PCT: f64 = 0.023;
+const EVIDENCE_REJECTED_X_PCT: f64 = 0.120;
+const EVIDENCE_REJECTED_Y_OFFSET_PCT: f64 = 0.013;
+const EVIDENCE_REJECTED_W_PCT: f64 = 0.270;
+const EVIDENCE_REJECTED_H_PCT: f64 = 0.006;
 
 pub fn load_or_create(path: &Path) -> Result<LoadedConfig> {
     if path.exists() {
@@ -253,7 +253,7 @@ mod tests {
             config.evidence[0].selected.y_pct,
             EVIDENCE_SELECTED_START_Y_PCT
         );
-        assert!((config.evidence[6].selected.y_pct - 0.7098).abs() < 0.000001);
+        assert!((config.evidence[6].selected.y_pct - 0.7812).abs() < 0.000001);
         assert_eq!(config.evidence[0].rejected.x_pct, EVIDENCE_REJECTED_X_PCT);
         assert_eq!(config.evidence[0].rejected.w_pct, EVIDENCE_REJECTED_W_PCT);
         assert_eq!(config.evidence[0].rejected.color.min_ratio, 0.12);

@@ -52,8 +52,8 @@ fn paper_visible(image: &RgbaImage) -> bool {
 }
 
 fn yellow_paper_coverage_visible(image: &RgbaImage) -> bool {
-    let x_positions = [0.30, 0.45, 0.54, 0.735];
-    let y_positions = [0.34, 0.55, 0.76];
+    let x_positions = [0.12, 0.35, 0.55, 0.83];
+    let y_positions = [0.22, 0.50, 0.78];
     let mut yellow_regions = 0;
     let mut total_regions = 0;
 
@@ -110,9 +110,9 @@ fn required_evidence_label_count(evidence: &[EvidenceConfig]) -> usize {
 }
 
 fn ghost_grid_visible(image: &RgbaImage) -> bool {
-    let columns = [0.55, 0.62, 0.69];
+    let columns = [0.55, 0.68, 0.80];
     let rows = [
-        0.326, 0.378, 0.430, 0.482, 0.534, 0.586, 0.638, 0.690, 0.742,
+        0.285, 0.352, 0.419, 0.486, 0.553, 0.620, 0.687, 0.754, 0.821,
     ];
     let mut visible_cells = 0;
     let mut visible_rows = 0;
@@ -155,33 +155,33 @@ fn evidence_page_markers_visible(image: &RgbaImage) -> bool {
 
 fn evidence_words_visible(image: &RgbaImage) -> bool {
     let evidence_tab = Region {
-        x_pct: 0.528,
-        y_pct: 0.150,
-        w_pct: 0.060,
+        x_pct: 0.510,
+        y_pct: 0.038,
+        w_pct: 0.075,
         h_pct: 0.040,
     };
     let left_title = Region {
-        x_pct: 0.278,
-        y_pct: 0.215,
-        w_pct: 0.085,
+        x_pct: 0.105,
+        y_pct: 0.122,
+        w_pct: 0.145,
         h_pct: 0.055,
     };
     let right_title = Region {
-        x_pct: 0.524,
-        y_pct: 0.215,
-        w_pct: 0.085,
+        x_pct: 0.515,
+        y_pct: 0.122,
+        w_pct: 0.145,
         h_pct: 0.055,
     };
     let left_rule = Region {
-        x_pct: 0.283,
-        y_pct: 0.254,
-        w_pct: 0.205,
+        x_pct: 0.110,
+        y_pct: 0.176,
+        w_pct: 0.350,
         h_pct: 0.008,
     };
     let right_rule = Region {
-        x_pct: 0.528,
-        y_pct: 0.254,
-        w_pct: 0.210,
+        x_pct: 0.520,
+        y_pct: 0.172,
+        w_pct: 0.365,
         h_pct: 0.008,
     };
 
@@ -197,10 +197,10 @@ fn evidence_words_visible(image: &RgbaImage) -> bool {
 
 fn right_page_prompt_visible(image: &RgbaImage) -> bool {
     let prompt = Region {
-        x_pct: 0.535,
-        y_pct: 0.270,
-        w_pct: 0.205,
-        h_pct: 0.055,
+        x_pct: 0.540,
+        y_pct: 0.195,
+        w_pct: 0.335,
+        h_pct: 0.060,
     };
 
     title_ink_ratio(image, &prompt) >= 0.015
@@ -421,12 +421,13 @@ mod tests {
     }
 
     #[test]
-    fn rejects_stale_pre_update_evidence_page_shape() {
+    fn rejects_compact_layout_with_current_evidence_map() {
         let mut image = RgbaImage::from_pixel(1000, 1000, Rgba([190, 180, 130, 255]));
-        let evidence = old_evidence_items();
+        let evidence = evidence_items();
 
-        draw_old_evidence_checkboxes(&mut image, &evidence);
-        draw_old_evidence_labels(&mut image, &evidence);
+        let old_evidence = old_evidence_items();
+        draw_old_evidence_checkboxes(&mut image, &old_evidence);
+        draw_old_evidence_labels(&mut image, &old_evidence);
         draw_old_evidence_page_markers(&mut image);
         draw_old_ghost_grid(&mut image);
 
@@ -460,9 +461,9 @@ mod tests {
         draw_region(
             image,
             &Region {
-                x_pct: 0.528,
-                y_pct: 0.150,
-                w_pct: 0.060,
+                x_pct: 0.510,
+                y_pct: 0.038,
+                w_pct: 0.075,
                 h_pct: 0.040,
             },
             Rgba([5, 5, 5, 255]),
@@ -473,34 +474,34 @@ mod tests {
     fn draw_evidence_page_body_markers(image: &mut RgbaImage) {
         let regions = [
             Region {
-                x_pct: 0.278,
-                y_pct: 0.215,
-                w_pct: 0.085,
+                x_pct: 0.105,
+                y_pct: 0.122,
+                w_pct: 0.145,
                 h_pct: 0.055,
             },
             Region {
-                x_pct: 0.524,
-                y_pct: 0.215,
-                w_pct: 0.085,
+                x_pct: 0.515,
+                y_pct: 0.122,
+                w_pct: 0.145,
                 h_pct: 0.055,
             },
             Region {
-                x_pct: 0.283,
-                y_pct: 0.254,
-                w_pct: 0.205,
+                x_pct: 0.110,
+                y_pct: 0.176,
+                w_pct: 0.350,
                 h_pct: 0.008,
             },
             Region {
-                x_pct: 0.528,
-                y_pct: 0.254,
-                w_pct: 0.210,
+                x_pct: 0.520,
+                y_pct: 0.172,
+                w_pct: 0.365,
                 h_pct: 0.008,
             },
             Region {
-                x_pct: 0.535,
-                y_pct: 0.270,
-                w_pct: 0.205,
-                h_pct: 0.055,
+                x_pct: 0.540,
+                y_pct: 0.195,
+                w_pct: 0.335,
+                h_pct: 0.060,
             },
         ];
 
@@ -510,8 +511,8 @@ mod tests {
     }
 
     fn draw_ghost_grid(image: &mut RgbaImage) {
-        let columns = [0.55, 0.62, 0.69];
-        let rows = [0.326, 0.378, 0.430, 0.482, 0.534, 0.586];
+        let columns = [0.55, 0.68, 0.80];
+        let rows = [0.285, 0.352, 0.419, 0.486, 0.553, 0.620];
 
         for y_pct in rows {
             for x_pct in columns {
@@ -533,8 +534,8 @@ mod tests {
         (0..7)
             .map(|index| EvidenceConfig {
                 name: format!("Evidence {index}"),
-                selected: region_matcher(0.286, 0.279 + index as f64 * 0.0718, 0.007, 0.014),
-                rejected: region_matcher(0.285, 0.287 + index as f64 * 0.0718, 0.115, 0.005),
+                selected: region_matcher(0.122, 0.210 + index as f64 * 0.0952, 0.012, 0.023),
+                rejected: region_matcher(0.120, 0.223 + index as f64 * 0.0952, 0.270, 0.006),
             })
             .collect()
     }
