@@ -52,6 +52,16 @@ pub struct ColorMatcher {
     pub min_ratio: f64,
 }
 
+const EVIDENCE_SELECTED_X_PCT: f64 = 0.286;
+const EVIDENCE_SELECTED_START_Y_PCT: f64 = 0.279;
+const EVIDENCE_ROW_STEP_PCT: f64 = 0.0718;
+const EVIDENCE_SELECTED_W_PCT: f64 = 0.007;
+const EVIDENCE_SELECTED_H_PCT: f64 = 0.014;
+const EVIDENCE_REJECTED_X_PCT: f64 = 0.285;
+const EVIDENCE_REJECTED_Y_OFFSET_PCT: f64 = 0.008;
+const EVIDENCE_REJECTED_W_PCT: f64 = 0.115;
+const EVIDENCE_REJECTED_H_PCT: f64 = 0.005;
+
 pub fn load_or_create(path: &Path) -> Result<LoadedConfig> {
     if path.exists() {
         let config = load(path)?;
@@ -146,15 +156,16 @@ fn default_config() -> Config {
             .iter()
             .enumerate()
             .map(|(index, name)| {
-                let selected_y = 0.235 + index as f64 * 0.098;
-                let rejected_y = 0.240 + index as f64 * 0.098;
+                let selected_y =
+                    EVIDENCE_SELECTED_START_Y_PCT + index as f64 * EVIDENCE_ROW_STEP_PCT;
+                let rejected_y = selected_y + EVIDENCE_REJECTED_Y_OFFSET_PCT;
                 EvidenceConfig {
                     name: (*name).to_string(),
                     selected: RegionMatcher {
-                        x_pct: 0.231,
+                        x_pct: EVIDENCE_SELECTED_X_PCT,
                         y_pct: selected_y,
-                        w_pct: 0.008,
-                        h_pct: 0.017,
+                        w_pct: EVIDENCE_SELECTED_W_PCT,
+                        h_pct: EVIDENCE_SELECTED_H_PCT,
                         color: ColorMatcher {
                             r: 10,
                             g: 10,
@@ -164,16 +175,16 @@ fn default_config() -> Config {
                         },
                     },
                     rejected: RegionMatcher {
-                        x_pct: 0.244,
+                        x_pct: EVIDENCE_REJECTED_X_PCT,
                         y_pct: rejected_y,
-                        w_pct: 0.006,
-                        h_pct: 0.008,
+                        w_pct: EVIDENCE_REJECTED_W_PCT,
+                        h_pct: EVIDENCE_REJECTED_H_PCT,
                         color: ColorMatcher {
                             r: 10,
                             g: 10,
                             b: 10,
                             tolerance: 55,
-                            min_ratio: 0.10,
+                            min_ratio: 0.12,
                         },
                     },
                 }
@@ -212,5 +223,39 @@ mod tests {
         assert!(!second.created);
 
         fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn checked_in_tracker_config_stays_valid() {
+        let config: Config = toml::from_str(include_str!("../phasmo_tracker.toml")).unwrap();
+
+        validate(&config).unwrap();
+        assert_eq!(config.evidence.len(), default_config().evidence.len());
+        assert_eq!(
+            config.evidence[0].selected.x_pct,
+            default_config().evidence[0].selected.x_pct
+        );
+        assert_eq!(
+            config.evidence[0].rejected.w_pct,
+            default_config().evidence[0].rejected.w_pct
+        );
+    }
+
+    #[test]
+    fn default_evidence_regions_match_current_journal_layout() {
+        let config = default_config();
+
+        assert_eq!(config.evidence.len(), 7);
+        assert_eq!(config.evidence[0].name, "EMF Level 5");
+        assert_eq!(config.evidence[6].name, "Spirit Box");
+        assert_eq!(config.evidence[0].selected.x_pct, EVIDENCE_SELECTED_X_PCT);
+        assert_eq!(
+            config.evidence[0].selected.y_pct,
+            EVIDENCE_SELECTED_START_Y_PCT
+        );
+        assert!((config.evidence[6].selected.y_pct - 0.7098).abs() < 0.000001);
+        assert_eq!(config.evidence[0].rejected.x_pct, EVIDENCE_REJECTED_X_PCT);
+        assert_eq!(config.evidence[0].rejected.w_pct, EVIDENCE_REJECTED_W_PCT);
+        assert_eq!(config.evidence[0].rejected.color.min_ratio, 0.12);
     }
 }
